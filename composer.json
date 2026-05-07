@@ -1,0 +1,11 @@
+{
+    "config": {
+        "platform": {
+            "php": "8.0.30"
+        }
+    },
+    "require": {
+        "google/apiclient": "^2.15",
+        "monolog/monolog": "^2.9"
+    }
+}
