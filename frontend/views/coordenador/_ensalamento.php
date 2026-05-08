@@ -1,0 +1,103 @@
+<div class="card shadow-sm border-0 mb-4" style="border-top:4px solid #f59e0b;">
+    <div class="card-header bg-white py-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+        <h5 class="mb-3 mb-md-0 fw-bold d-flex align-items-center text-dark">
+            <i class="bi bi-door-open text-warning me-3 fs-4"></i> Ensalamento
+        </h5>
+        <button class="btn btn-primary rounded-pill fw-semibold px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalEnsalamento">
+            <i class="bi bi-plus-lg me-2"></i>Novo Ensalamento
+        </button>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive" style="max-height:600px;overflow-y:auto;">
+            <table class="table table-striped table-hover align-middle mb-0">
+                <thead class="table-light sticky-top">
+                    <tr>
+                        <th class="ps-4 py-3">Curso</th>
+                        <th>Turno</th>
+                        <th>Bloco</th>
+                        <th>Professor</th>
+                        <th>Disciplina</th>
+                        <th class="pe-4 text-center">Ação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($listaEnsalamentos as $e): ?>
+                    <tr>
+                        <td class="ps-4 fw-semibold"><?= htmlspecialchars($e['curso'] ?? '-') ?></td>
+                        <td><span class="badge bg-light text-dark border"><?= htmlspecialchars($e['turno'] ?? '-') ?></span></td>
+                        <td><?= htmlspecialchars($e['bloco'] ?? '-') ?></td>
+                        <td><?= htmlspecialchars($e['professor'] ?? '-') ?></td>
+                        <td class="text-muted"><?= htmlspecialchars($e['disciplina'] ?? '-') ?></td>
+                        <td class="pe-4 text-center">
+                            <form method="POST" action="/index.php?page=coordenador" class="d-inline"
+                                  onsubmit="return confirm('Remover este ensalamento?')">
+                                <input type="hidden" name="excluir_ensalamento" value="1">
+                                <input type="hidden" name="id_ensalamento" value="<?= $e['id'] ?>">
+                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                    <?php if (empty($listaEnsalamentos)): ?>
+                        <tr><td colspan="6" class="text-center py-5 text-muted">Nenhum ensalamento cadastrado.</td></tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Novo Ensalamento -->
+<div class="modal fade" id="modalEnsalamento" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-door-open me-2"></i>Novo Ensalamento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="/index.php?page=coordenador" class="row g-3">
+                    <input type="hidden" name="salvar_ensalamento" value="1">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">Professor</label>
+                        <select name="id_professor" class="form-select rounded-3" required>
+                            <option value="">Selecione...</option>
+                            <?php foreach ($professores as $p): ?>
+                                <option value="<?= $p['id'] ?>"><?= htmlspecialchars($p['nome']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">Disciplina</label>
+                        <select name="id_disciplina" class="form-select rounded-3" required>
+                            <option value="">Selecione...</option>
+                            <?php foreach ($disciplinas as $d): ?>
+                                <option value="<?= $d['id'] ?>"><?= htmlspecialchars($d['nome']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Curso</label>
+                        <input type="text" name="curso" class="form-control rounded-3" placeholder="Ex: Ciência da Computação" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Turno</label>
+                        <select name="turno" class="form-select rounded-3" required>
+                            <option value="">Selecione...</option>
+                            <option>Manhã</option><option>Tarde</option><option>Noite</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Bloco / Sala</label>
+                        <input type="text" name="bloco" class="form-control rounded-3" placeholder="Ex: Bloco A - Sala 101">
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary w-100 rounded-pill fw-semibold">Salvar Ensalamento</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

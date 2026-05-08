@@ -1,0 +1,9 @@
+Options -Indexes
+RewriteEngine On
+
+# Arquivos e diretórios estáticos passam direto (CSS, JS, imagens, uploads)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Tudo o mais passa pelo front controller
+RewriteRule ^(.*)$ index.php?page=$1 [QSA,L]

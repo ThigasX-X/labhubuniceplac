@@ -1,0 +1,207 @@
+/* =====================================================================
+   LabHub UNICEPLAC — Global Stylesheet
+   ===================================================================== */
+
+:root {
+    --verde-uniceplac: #00734F;
+    --roxo-uniceplac:  #421B71;
+    --laranja-uniceplac: #F0733C;
+    --manha-cor:  #ffc107;
+    --tarde-cor:  #fd7e14;
+    --noite-cor:  #421B71;
+}
+
+body {
+    background-color: #f4f6f8;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    transition: background-color .3s ease;
+}
+
+.card, .card-header, .form-control, .form-select,
+.btn, .badge, .alert, .offcanvas, .modal-content { border-radius: 0 !important; }
+
+/* ---- Brand -------------------------------------------------------- */
+.bg-uniceplac     { background-color: var(--verde-uniceplac) !important; }
+.text-uniceplac   { color: var(--verde-uniceplac) !important; }
+.text-laranja     { color: var(--laranja-uniceplac) !important; }
+.btn-uniceplac    { background-color: var(--verde-uniceplac); color: #fff; border: none; font-weight: 500; }
+.btn-uniceplac:hover { background-color: var(--roxo-uniceplac); color: #fff; }
+
+/* ---- Layout ------------------------------------------------------- */
+.navbar {
+    border-bottom: 1px solid rgba(0,0,0,.05) !important;
+    background: rgba(255,255,255,.9) !important;
+    backdrop-filter: blur(10px);
+}
+
+.content-section { display: none; animation: fadeIn .4s ease-in-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ---- Offcanvas / Sidebar ----------------------------------------- */
+.offcanvas-menu-link {
+    padding: 12px 20px; color: #495057; font-weight: 500;
+    border-bottom: 1px solid #f1f1f1; display: block;
+    text-decoration: none; transition: background-color .2s;
+}
+.offcanvas-menu-link:hover, .offcanvas-menu-link.active-link {
+    background-color: rgba(0,115,79,.05);
+    color: var(--verde-uniceplac);
+    border-right: 4px solid var(--verde-uniceplac);
+}
+.offcanvas-menu-link i { width: 25px; text-align: center; }
+
+/* ---- Avatares ----------------------------------------------------- */
+.avatar-img-small {
+    width: 40px; height: 40px; object-fit: cover;
+    border-radius: 50% !important; border: 2px solid #dee2e6;
+    cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,.05);
+    transition: all .2s;
+}
+.avatar-img-small:hover { opacity: .8; border-color: var(--verde-uniceplac); transform: scale(1.05); }
+.avatar-img-large {
+    width: 90px; height: 90px; object-fit: cover;
+    border-radius: 50% !important; border: 3px solid var(--laranja-uniceplac);
+    margin-bottom: 15px;
+}
+#nova_foto_input { display: none; }
+
+/* ---- Top icon buttons --------------------------------------------- */
+.top-icon-btn {
+    color: #495057; font-size: 1.3rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; transition: color .2s;
+}
+.top-icon-btn:hover { color: var(--verde-uniceplac); }
+
+/* ---- Apple Glassmorphism Cards ------------------------------------ */
+.apple-ticket {
+    border-radius: 20px !important;
+    border: 1px solid rgba(0,0,0,.08) !important;
+    background: rgba(255,255,255,.7);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(0,0,0,.03);
+    transition: all .3s ease; position: relative; overflow: hidden;
+}
+.apple-ticket:hover { box-shadow: 0 8px 30px rgba(0,0,0,.08); transform: translateY(-3px); }
+
+/* ---- Apple KPI (Suporte) ----------------------------------------- */
+.apple-kpi {
+    border-radius: 24px !important; padding: 24px 20px;
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,.4) !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,.06);
+    position: relative; overflow: hidden; transition: transform .3s ease, box-shadow .3s ease;
+}
+.apple-kpi:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,.1); }
+.kpi-total     { background: linear-gradient(135deg, rgba(0,115,79,.05), rgba(0,115,79,.15)); border-color: rgba(0,115,79,.2) !important; }
+.kpi-matutino  { background: linear-gradient(135deg, rgba(255,193,7,.05), rgba(255,193,7,.15)); border-color: rgba(255,193,7,.2) !important; }
+.kpi-vespertino { background: linear-gradient(135deg, rgba(253,126,20,.05), rgba(253,126,20,.15)); border-color: rgba(253,126,20,.2) !important; }
+.kpi-noturno   { background: linear-gradient(135deg, rgba(66,27,113,.05), rgba(66,27,113,.15)); border-color: rgba(66,27,113,.2) !important; }
+
+/* ---- Turn dividers ------------------------------------------------ */
+.border-matutino  { border-left: 6px solid var(--manha-cor) !important; }
+.border-vespertino { border-left: 6px solid var(--tarde-cor) !important; }
+.border-noturno   { border-left: 6px solid var(--noite-cor) !important; }
+
+.turn-divider { display: flex; align-items: center; margin: 2rem 0 1rem; color: #6c757d; }
+.turn-divider::before, .turn-divider::after { content: ""; flex: 1; border-bottom: 1px solid rgba(0,0,0,.1); }
+.turn-divider:not(:empty)::before { margin-right: 1em; }
+.turn-divider:not(:empty)::after  { margin-left:  1em; }
+.turn-badge { display: inline-flex; align-items: center; padding: 6px 16px; border-radius: 20px; font-size: .85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; backdrop-filter: blur(10px); }
+.badge-matutino  { background: rgba(255,193,7,.15);  color: #d39e00; border: 1px solid rgba(255,193,7,.3); }
+.badge-vespertino { background: rgba(253,126,20,.15); color: #e85e00; border: 1px solid rgba(253,126,20,.3); }
+.badge-noturno   { background: rgba(66,27,113,.15);  color: #421B71; border: 1px solid rgba(66,27,113,.3); }
+
+/* ---- Apple tags e dots ------------------------------------------- */
+.apple-tag { display: inline-flex; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 30px; font-size: .75rem; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; backdrop-filter: blur(8px); width: 100%; }
+.apple-tag.in-use { background: rgba(25,135,84,.1); border: 1px solid rgba(25,135,84,.2); color: #198754; }
+.apple-tag.late   { background: rgba(220,53,69,.1);  border: 1px solid rgba(220,53,69,.2);  color: #dc3545; }
+.apple-tag:not(.in-use):not(.late) { background: rgba(25,135,84,.1); border: 1px solid rgba(25,135,84,.2); color: #198754; }
+
+.apple-dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
+.apple-dot.in-use { background-color: #198754; box-shadow: 0 0 6px #198754; animation: pulse-green 1.5s infinite; }
+.apple-dot.late   { background-color: #dc3545; box-shadow: 0 0 6px #dc3545; animation: pulse-red 1.5s infinite; }
+.apple-dot:not(.in-use):not(.late) { background-color: #198754; box-shadow: 0 0 6px #198754; animation: pulse-green 1.5s infinite; }
+
+@keyframes pulse-green { 0% { transform: scale(.95); box-shadow: 0 0 0 0 rgba(25,135,84,.7); } 70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(25,135,84,0); } 100% { transform: scale(.95); box-shadow: 0 0 0 0 rgba(25,135,84,0); } }
+@keyframes pulse-red   { 0% { transform: scale(.95); box-shadow: 0 0 0 0 rgba(220,53,69,.7); } 70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(220,53,69,0); } 100% { transform: scale(.95); box-shadow: 0 0 0 0 rgba(220,53,69,0); } }
+
+/* ---- Apple buttons ----------------------------------------------- */
+.apple-btn { display: flex; align-items: center; justify-content: center; width: 100%; padding: 8px 16px; border-radius: 30px; font-size: .85rem; font-weight: 600; backdrop-filter: blur(8px); transition: all .2s ease; cursor: pointer; border: none; outline: none; text-decoration: none; }
+.apple-btn-success { background: rgba(25,135,84,.1); border: 1px solid rgba(25,135,84,.2); color: #198754; }
+.apple-btn-success:hover { background: rgba(25,135,84,.2); transform: translateY(-1px); }
+.apple-btn-danger  { background: rgba(220,53,69,.08); border: 1px solid rgba(220,53,69,.2); color: #dc3545; }
+.apple-btn-danger:hover  { background: rgba(220,53,69,.15); transform: translateY(-1px); }
+.apple-btn-primary { background: rgba(13,110,253,.1); border: 1px solid rgba(13,110,253,.2); color: #0d6efd; }
+.apple-btn-primary:hover { background: rgba(13,110,253,.2); transform: translateY(-1px); }
+
+/* ---- Animations -------------------------------------------------- */
+@keyframes heartbeat { 0%,80%,100% { transform: scale(1); } 20%,60% { transform: scale(1.04); } }
+.heartbeat { animation: heartbeat 1.5s infinite; }
+@keyframes sos-pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+.sos-active .bi-bell { color: #dc3545 !important; animation: sos-pulse .8s infinite; }
+
+/* ---- Calendário (FullCalendar) ----------------------------------- */
+.fc-theme-standard .fc-scrollgrid { border: 1px solid rgba(0,0,0,.05); border-radius: 12px; overflow: hidden; }
+.fc-theme-standard td, .fc-theme-standard th { border-color: rgba(0,0,0,.05); }
+.fc-col-header-cell { background-color: #fbfbfd; padding: 8px 0; font-weight: 600; color: #86868b; text-transform: uppercase; font-size: .8rem; }
+.fc .fc-button-group > .fc-button { background: #f5f5f7 !important; color: #007aff !important; border-color: #d2d2d7 !important; text-transform: capitalize; box-shadow: none !important; font-weight: 500; transition: .2s; }
+.fc .fc-button-group > .fc-button:hover { background: #e8e8ed !important; }
+.fc .fc-button-group > .fc-button.fc-button-active { background: #007aff !important; color: #fff !important; border-color: #007aff !important; }
+.fc .fc-today-button { background: #fff !important; color: #007aff !important; border-color: #d2d2d7 !important; font-weight: 600; text-transform: capitalize; }
+.fc-toolbar-title { font-weight: 700 !important; color: #1d1d1f; text-transform: capitalize; }
+.apple-event-fixa   { --fc-event-bg-color: rgba(66,27,113,.12); --fc-event-border-color: var(--roxo-uniceplac); --fc-event-text-color: var(--roxo-uniceplac); }
+.apple-event-avulsa { --fc-event-bg-color: rgba(240,115,60,.12); --fc-event-border-color: var(--laranja-uniceplac); --fc-event-text-color: #c95b28; }
+.apple-event-feriado { --fc-event-bg-color: rgba(220,53,69,.12); --fc-event-border-color: #dc3545; --fc-event-text-color: #a71d2a; }
+.fc-event { border-left-width: 4px !important; border-radius: 6px !important; border-top: none !important; border-right: none !important; border-bottom: none !important; padding: 4px !important; margin-bottom: 3px; cursor: pointer; }
+.fc-daygrid-event { white-space: normal !important; align-items: start !important; }
+
+/* ---- Dark Mode --------------------------------------------------- */
+[data-bs-theme="dark"] body { background-color: #121212; color: #e0e0e0; }
+[data-bs-theme="dark"] .bg-white, [data-bs-theme="dark"] .bg-light { background-color: #1e1e1e !important; color: #e0e0e0 !important; }
+[data-bs-theme="dark"] .navbar { background: rgba(30,30,30,.9) !important; border-bottom-color: #333 !important; }
+[data-bs-theme="dark"] .card { background-color: #1e1e1e; border-color: #333 !important; }
+[data-bs-theme="dark"] .apple-ticket { background: rgba(35,35,35,.7); border-color: rgba(255,255,255,.08) !important; }
+[data-bs-theme="dark"] .text-dark { color: #f8f9fa !important; }
+[data-bs-theme="dark"] .text-secondary, [data-bs-theme="dark"] .text-muted { color: #adb5bd !important; }
+[data-bs-theme="dark"] .border, [data-bs-theme="dark"] .border-bottom { border-color: #333 !important; }
+[data-bs-theme="dark"] .table { color: #e0e0e0; border-color: #444; }
+[data-bs-theme="dark"] .table-light th { background-color: #2a2a2a !important; color: #e0e0e0; border-color: #444; }
+[data-bs-theme="dark"] .offcanvas { background-color: #1e1e1e !important; }
+[data-bs-theme="dark"] .offcanvas-menu-link { color: #e0e0e0; border-bottom-color: #333; }
+[data-bs-theme="dark"] .form-control, [data-bs-theme="dark"] .form-select { background-color: #2a2a2a; color: #fff; border-color: #444; }
+[data-bs-theme="dark"] .modal-content { background-color: #1e1e1e; border-color: #444; }
+[data-bs-theme="dark"] .top-icon-btn { color: #e0e0e0; }
+[data-bs-theme="dark"] .apple-kpi { background: rgba(40,40,40,.6); }
+[data-bs-theme="dark"] .kpi-total  { background: linear-gradient(135deg, rgba(0,115,79,.15), rgba(0,115,79,.3)); }
+[data-bs-theme="dark"] .turn-divider::before, [data-bs-theme="dark"] .turn-divider::after { border-bottom-color: rgba(255,255,255,.1); }
+[data-bs-theme="dark"] .fc-toolbar-title { color: #fff; }
+[data-bs-theme="dark"] .fc-col-header-cell { background-color: #1c1c1e; color: #98989d; border-color: #333; }
+[data-bs-theme="dark"] .fc-theme-standard .fc-scrollgrid, [data-bs-theme="dark"] .fc-theme-standard td, [data-bs-theme="dark"] .fc-theme-standard th { border-color: #333; }
+[data-bs-theme="dark"] .fc .fc-button-group > .fc-button { background: #1c1c1e !important; border-color: #333 !important; }
+[data-bs-theme="dark"] .fc .fc-button-group > .fc-button.fc-button-active { background: #0a84ff !important; color: #fff !important; }
+[data-bs-theme="dark"] .fc .fc-today-button { background: #1c1c1e !important; color: #0a84ff !important; }
+[data-bs-theme="dark"] .apple-event-fixa   { --fc-event-bg-color: rgba(66,27,113,.3);  --fc-event-text-color: #dcb3ff; }
+[data-bs-theme="dark"] .apple-event-avulsa { --fc-event-bg-color: rgba(240,115,60,.25); --fc-event-text-color: #ffb088; }
+[data-bs-theme="dark"] .apple-event-feriado { --fc-event-bg-color: rgba(220,53,69,.25); --fc-event-text-color: #ff8a95; }
+
+/* ---- Header icon helper ------------------------------------------ */
+.header-icon { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; margin-right: 12px; background-color: rgba(0,0,0,.05); }
+
+/* ---- Kanban -------------------------------------------------------- */
+.kanban-col { transition: background .2s ease; border-radius: 8px; }
+.kanban-col.kanban-dragover { background: rgba(99,102,241,.08); outline: 2px dashed #6366f1; }
+.kanban-card { cursor: grab; transition: transform .15s ease, box-shadow .15s ease; user-select: none; }
+.kanban-card:active { cursor: grabbing; }
+.kanban-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.1) !important; }
+[data-bs-theme="dark"] .kanban-card { background: #2a2a2a !important; border-color: #444 !important; }
+[data-bs-theme="dark"] .kanban-col.kanban-dragover { background: rgba(99,102,241,.15); }
+
+/* ---- Apple KPI Card ----------------------------------------------- */
+.apple-kpi-card { border-radius: 16px; transition: transform .2s ease; }
+.apple-kpi-card:hover { transform: translateY(-3px); }
+[data-bs-theme="dark"] .apple-kpi-card { background: #1e1e1e !important; }
+
+/* ---- Quadro Grade -------------------------------------------------- */
+.apple-ticket-mini { transition: box-shadow .15s ease; }
+.apple-ticket-mini:hover { box-shadow: 0 4px 12px rgba(0,0,0,.12) !important; }

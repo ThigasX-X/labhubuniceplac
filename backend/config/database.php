@@ -1,0 +1,15 @@
+<?php
+$host   = getenv('DB_HOST')     ?: $_ENV['DB_HOST']     ?? 'localhost';
+$dbname = getenv('DB_NAME')     ?: $_ENV['DB_NAME']     ?? 'sistema_labs';
+$user   = getenv('DB_USER')     ?: $_ENV['DB_USER']     ?? 'root';
+$pass   = getenv('DB_PASS')     ?: $_ENV['DB_PASS']     ?? '';
+
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $user, $pass);
+    $pdo->exec("SET time_zone = '-03:00'");
+    $pdo->setAttribute(PDO::ATTR_ERRMODE,        PDO::ERRMODE_EXCEPTION);
+    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    http_response_code(500);
+    die(json_encode(['error' => 'Falha na conexão com o banco de dados.']));
+}
