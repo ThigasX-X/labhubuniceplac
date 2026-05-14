@@ -1,19 +1,33 @@
 <?php
-require_once BACKEND_PATH . '/models/Usuario.php';
-require_once BACKEND_PATH . '/helpers/Auth.php';
+require_once __DIR__ . '/BaseController.php';
+require_once dirname(__DIR__) . '/DAOImpl/UsuarioDAOImpl.php';
+require_once __DIR__ . '/../services/CadastroRestService.php';
+require_once __DIR__ . '/../helpers/Auth.php';
 
 class AuthController extends BaseController
 {
+    private UsuarioDAOImpl $usuarioDAO;
+    private CadastroRestService $cadastroService;
+
+    public function __construct($pdo)
+    {
+        parent::__construct($pdo);
+        // Injetamos as novas camadas
+        $this->usuarioDAO = new UsuarioDAOImpl($this->pdo);
+        $this->cadastroService = new CadastroRestService($this->pdo);
+    }
+
     public function login(): void
     {
-        $erro   = '';
+        $erro = '';
         $sucesso = '';
 
+        // Mantemos suas mensagens de feedback via GET
         if (isset($_GET['msg'])) {
             $sucesso = match ($_GET['msg']) {
-                'cadastro_ok'     => 'Cadastro realizado! Aguarde ativação ou use o login institucional.',
+                'cadastro_ok'      => 'Cadastro realizado! Aguarde ativação.',
                 'email_confirmado' => 'E-mail confirmado! Você já pode fazer login.',
-                default           => '',
+                default            => '',
             };
         }
 
@@ -21,8 +35,8 @@ class AuthController extends BaseController
             $email = trim($_POST['email'] ?? '');
             $senha = $_POST['senha'] ?? '';
 
-            $model   = new Usuario($this->pdo);
-            $usuario = $model->findByEmail($email);
+            // Usamos o DAO agora
+            $usuario = $this->usuarioDAO->findByEmail($email);
 
             if ($usuario && password_verify($senha, $usuario['senha'])) {
                 if ($usuario['email_verificado'] == 0) {
@@ -45,58 +59,33 @@ class AuthController extends BaseController
         $mensagem = '';
 
         if ($this->isPost() && isset($_POST['cadastrar_banco'])) {
-            $nome           = trim($_POST['nome'] ?? '');
-            $email          = trim($_POST['email'] ?? '');
-            $senha          = $_POST['senha'] ?? '';
-            $confirmarSenha = $_POST['confirmar_senha'] ?? '';
+            // Preparamos os dados para o Service
+            $dados = [
+                'nome'            => trim($_POST['nome'] ?? ''),
+                'email'           => trim($_POST['email'] ?? ''),
+                'senha'           => $_POST['senha'] ?? '',
+                'confirmar_senha' => $_POST['confirmar_senha'] ?? '',
+                'perfil'          => 'professor'
+            ];
 
-            if (!str_ends_with($email, '@uniceplac.edu.br')) {
-                $mensagem = '<div class="alert alert-danger py-2 small">Use apenas seu e-mail institucional (@uniceplac.edu.br).</div>';
-            } elseif ($senha !== $confirmarSenha) {
-                $mensagem = '<div class="alert alert-danger py-2 small">As senhas não coincidem.</div>';
-            } elseif (strlen($senha) < 8) {
+            // --- VALIDAÇÕES RÁPIDAS DE INTERFACE ---
+            if (!str_ends_with($dados['email'], '@uniceplac.edu.br')) {
+                $mensagem = '<div class="alert alert-danger py-2 small">Use apenas seu e-mail institucional.</div>';
+            } elseif (strlen($dados['senha']) < 8) {
                 $mensagem = '<div class="alert alert-danger py-2 small">A senha deve ter pelo menos 8 caracteres.</div>';
             } else {
-                $model = new Usuario($this->pdo);
+                // --- DELEGAMOS PARA O SERVICE (O Cérebro) ---
+                $resultado = $this->cadastroService->salvar($dados);
 
-                if ($model->findByEmail($email)) {
-                    $mensagem = '<div class="alert alert-warning py-2 small">Este e-mail já está cadastrado. <a href="/index.php?page=login">Faça login</a>.</div>';
+                if ($resultado['status'] === 'success') {
+                    $mensagem = '<div class="alert alert-success py-2 small">✅ Cadastro realizado com sucesso!</div>';
                 } else {
-                    try {
-                        $model->create($nome, $email, password_hash($senha, PASSWORD_DEFAULT));
-                        $mensagem = '<div class="alert alert-success py-2 small">✅ Cadastro realizado! Aguarde a ativação ou tente o login institucional.</div>';
-                    } catch (PDOException $e) {
-                        $mensagem = '<div class="alert alert-danger py-2 small">Erro técnico: ' . htmlspecialchars($e->getMessage()) . '</div>';
-                    }
+                    $mensagem = '<div class="alert alert-warning py-2 small">' . $resultado['message'] . '</div>';
                 }
             }
         }
 
         $this->render('auth/cadastro', compact('mensagem'));
-    }
-
-    public function verificar(): void
-    {
-        $mensagem  = '';
-        $tipoAlerta = '';
-
-        $token = trim($_GET['token'] ?? '');
-
-        if (empty($token)) {
-            $mensagem  = 'Nenhum código de verificação foi fornecido.';
-            $tipoAlerta = 'warning';
-        } else {
-            $model = new Usuario($this->pdo);
-            if ($model->verificarEmail($token)) {
-                $mensagem  = 'E-mail verificado com sucesso! Acesso liberado.';
-                $tipoAlerta = 'success';
-            } else {
-                $mensagem  = 'Link inválido ou conta já verificada anteriormente.';
-                $tipoAlerta = 'danger';
-            }
-        }
-
-        $this->render('auth/verificar', compact('mensagem', 'tipoAlerta'));
     }
 
     public function google(): void

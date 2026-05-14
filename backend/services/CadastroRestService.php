@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../DAOs/UsuarioDAOImpl.php';
+require_once __DIR__ . '/../DAOImpl/UsuarioDAOImpl.php';
 
 class CadastroRestService {
     private $usuarioDAO;
@@ -8,7 +8,7 @@ class CadastroRestService {
         $this->usuarioDAO = new UsuarioDAOImpl($pdo);
     }
 
-    public function salvar($dados) {
+    public function salvar(array $dados) {
         if ($this->usuarioDAO->findByEmail($dados['email'])) {
             return ['status' => 'error', 'message' => 'E-mail já cadastrado.'];
         }
