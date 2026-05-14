@@ -5,10 +5,24 @@ config.php
 # Dependências (O Composer baixa isso depois)
 vendor/
 node_modules/
+PHPMailer/
 
 # Uploads dos usuários (Fotos de perfil, etc)
 uploads/
 public/uploads/
+
+# Certificados / bundles CA
+cacert
+cacert.pem
+
+# Configurações de IDE e ferramentas locais
+.idea/
+.vscode/
+.ai/
+.claude/
+
+# Logs
+*.log
 
 # Arquivos de sistema operacional
 .DS_Store
