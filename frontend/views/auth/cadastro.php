@@ -29,7 +29,7 @@
         </div>
         <div class="card-body p-4">
             <?= $mensagem ?>
-            <form action="/index.php?page=cadastro" method="POST" id="formCadastro">
+            <form action="index.php?page=cadastro" method="POST" id="formCadastro">
                 <div class="mb-2">
                     <label class="form-label-nitido">Nome Completo</label>
                     <div class="input-group input-group-sm">

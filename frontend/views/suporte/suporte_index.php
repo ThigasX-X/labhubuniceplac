@@ -6,17 +6,17 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <script>const savedTheme = localStorage.getItem('tema-uniceplac') || 'light'; document.documentElement.setAttribute('data-bs-theme', savedTheme);</script>
-    <link rel="stylesheet" href="/assets/css/app.css">
+    <link rel="stylesheet" href="assets/css/app.css">
 </head>
 <body>
-    <form id="formFotoPerfil" action="/index.php?page=suporte" method="POST" enctype="multipart/form-data" class="d-none">
+    <form id="formFotoPerfil" action="index.php?page=suporte" method="POST" enctype="multipart/form-data" class="d-none">
         <input type="file" name="nova_foto" id="nova_foto_input" accept="image/png,image/jpeg,image/webp">
     </form>
 
     <nav class="navbar navbar-light bg-white mb-4 shadow-sm sticky-top">
         <div class="container-fluid px-3 px-md-4">
             <span class="navbar-brand d-flex align-items-center">
-                <img src="/assets/images/uniceplac.png" id="navbarLogo" alt="Logo" style="height:70px;margin-right:12px;">
+                <img src="assets/images/uniceplac.png" id="navbarLogo" alt="Logo" style="height:70px;margin-right:12px;">
             </span>
             <div class="ms-auto d-flex align-items-center">
                 <div class="me-4 top-icon-btn" id="themeToggleBtn"><i class="bi bi-moon-stars" id="themeIcon"></i></div>
@@ -118,7 +118,7 @@
     });
 
     function verificarSOS() {
-        fetch('/index.php?page=api/check-sos-status')
+        fetch('index.php?page=api/check-sos-status')
             .then(r => r.json())
             .then(data => {
                 const badge = document.getElementById('badge-sos');

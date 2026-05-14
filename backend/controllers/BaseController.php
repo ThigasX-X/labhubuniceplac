@@ -41,13 +41,14 @@ abstract class BaseController
         exit;
     }
 
-    protected function requireAuth(string $perfil = null): void
+    protected function requireAuth(?string $perfil = null): void
     {
         if (!isset($_SESSION['usuario_id'])) {
             $this->redirect('login');
         }
 
         if ($perfil !== null && $_SESSION['perfil'] !== $perfil) {
+            // Se o perfil logado for diferente do exigido, redireciona
             $this->redirect('login');
         }
     }

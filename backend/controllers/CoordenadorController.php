@@ -226,7 +226,7 @@ class CoordenadorController extends BaseController
         $eventosJson = json_encode($eventosCalendario);
         $fotoAtual   = Auth::foto();
 
-        $this->render('coordenador/index', compact(
+        $this->render('coordenador/painel', compact(
             'mensagem', 'qtdPendentes', 'fotoAtual',
             'reservasPendentes', 'agendamentosAprovados', 'historicoCompleto',
             'professores', 'laboratoriosCadastrados', 'disciplinas',

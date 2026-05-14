@@ -8,18 +8,18 @@
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.11/locales-all.global.min.js"></script>
     <script>const savedTheme = localStorage.getItem('tema-uniceplac') || 'light'; document.documentElement.setAttribute('data-bs-theme', savedTheme);</script>
-    <link rel="stylesheet" href="/assets/css/app.css">
+    
+    <link rel="stylesheet" href="assets/css/app.css">
 </head>
 <body>
-    <form id="formFotoPerfil" action="/index.php?page=professor" method="POST" enctype="multipart/form-data" class="d-none">
+    <form id="formFotoPerfil" action="index.php?page=professor" method="POST" enctype="multipart/form-data" class="d-none">
         <input type="file" name="nova_foto" id="nova_foto_input" accept="image/png,image/jpeg,image/webp">
     </form>
 
-    <!-- Navbar -->
     <nav class="navbar navbar-light bg-white mb-4 border-bottom shadow-sm sticky-top">
         <div class="container-fluid px-3 px-md-4">
             <span class="navbar-brand mb-0 h1 d-flex align-items-center">
-                <img src="/assets/images/uniceplac.png" id="navbarLogo" alt="Logo" style="height:70px;margin-right:12px;transition:.3s;">
+                <img src="assets/images/uniceplac.png" id="navbarLogo" alt="Logo" style="height:70px;margin-right:12px;transition:.3s;">
             </span>
             <div class="d-flex align-items-center">
                 <div class="me-4 top-icon-btn" id="themeToggleBtn" title="Alternar Tema"><i class="bi bi-moon-stars" id="themeIcon"></i></div>
@@ -33,7 +33,32 @@
         </div>
     </nav>
 
-    <!-- Sidebar -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="sidebarMenu">
+        <div class="offcanvas-body p-0 d-flex flex-column bg-white">
+            <div class="flex-grow-1 overflow-auto">
+                <div class="p-3 text-muted small fw-bold text-uppercase opacity-75">Meu Planejamento</div>
+                <a href="#sessao-calendario" class="offcanvas-menu-link"><i class="bi bi-calendar3 text-primary me-2"></i> Meu Calendário</a>
+            </div>
+            <div class="p-3 border-top mt-auto bg-light">
+                <a href="index.php?page=logout" class="btn btn-outline-danger w-100 fw-bold"><i class="bi bi-box-arrow-right me-2"></i> Sair</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container pt-3 pb-5">
+        <?= $mensagem ?>
+        <div id="sessao-calendario" class="content-section">
+            <?php include APP_PATH . '/Views/professor/_calendario.php'; ?>
+        </div>
+        <div id="sessao-dashboard" class="content-section">
+            <?php include APP_PATH . '/Views/professor/_dashboard.php'; ?>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/js/app.js"></script>
+    <script>
+
     <div class="offcanvas offcanvas-end" tabindex="-1" id="sidebarMenu">
         <div class="offcanvas-header bg-uniceplac text-white py-3 border-0">
             <h6 class="offcanvas-title fw-bold"><i class="bi bi-grid-1x2-fill me-2"></i>Menu Docente</h6>

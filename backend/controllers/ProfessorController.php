@@ -289,7 +289,7 @@ class ProfessorController extends BaseController
 
         $fotoAtual = Auth::foto();
 
-        $this->render('professor/index', compact(
+        $this->render('professor/painel_professor', compact(
             'mensagem', 'abaAtiva', 'laboratorios', 'disciplinas',
             'minhasAlocacoes', 'chavesRetiradas',
             'proximasMatutino', 'proximasVespertino', 'proximasNoturno',

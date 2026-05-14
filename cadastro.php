@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro - UNICEPLAC</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <style>
+        :root { --verde-uniceplac: #00734F; --roxo-uniceplac: #421B71; }
+        body { background-color: #e9ecef; font-family: 'Segoe UI', sans-serif; }
+        .card-cadastro { border: none; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); overflow: hidden; max-width: 420px; width: 100%; margin: auto; }
+        .bg-cadastro-header { background: linear-gradient(135deg, var(--verde-uniceplac), #009666); color: white; padding: 20px; text-align: center; }
+        .btn-uniceplac { background-color: var(--verde-uniceplac); color: white; font-weight: 700; border: none; transition: 0.3s; }
+        .btn-uniceplac:hover { background-color: #005a3e; color: white; }
+        .btn-google { background-color: white; color: #444; border: 1px solid #ced4da; font-weight: 600; text-decoration: none; border-radius: 8px; }
+        .btn-google:hover { background-color: #f8f9fa; border-color: #adb5bd; }
+        .form-label-nitido { font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: #495057; letter-spacing: 0.5px; margin-bottom: 0.25rem; display: block; }
+        .password-toggle { cursor: pointer; color: #6c757d; }
+    </style>
+</head>
+<body class="d-flex justify-content-center align-items-center vh-100 p-3">
+
+<div class="d-flex flex-column align-items-center w-100">
+    
+    <div class="text-center mb-3">
+        <img src="uniceplac2.png" alt="Logo UNICEPLAC" style="max-height: 80px;">
+    </div>
+
+    <div class="card card-cadastro">
+        <div class="bg-cadastro-header">
+            <h4 class="fw-bold mb-1">Cadastro</h4>
+            <p class="mb-0 opacity-85 small">Acesso à Central de Reservas</p>
+        </div>
+        
+        <div class="card-body p-4">
+            
+            <!-- Esta div receberá a mensagem de Sucesso ou Erro da API -->
+            <div id="mensagemRetorno"></div>
+
+            <form id="formCadastro">
+                
+                <div class="mb-2">
+                    <label class="form-label-nitido">Nome Completo</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                        <input type="text" id="nome" class="form-control" required placeholder="Ex: João Silva">
+                    </div>
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label-nitido">E-mail Institucional</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                        <input type="email" id="email" class="form-control" required placeholder="nome@uniceplac.edu.br">
+                    </div>
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label-nitido">Senha</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                        <input type="password" id="senha" class="form-control" required placeholder="Mínimo 8 caracteres">
+                        <span class="input-group-text bg-white password-toggle" onclick="togglePassword('senha', 'iconSenha')">
+                            <i class="bi bi-eye-slash" id="iconSenha"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label-nitido">Confirmar Senha</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                        <input type="password" id="confirmar_senha" class="form-control" required placeholder="••••••••">
+                        <span class="input-group-text bg-white password-toggle" onclick="togglePassword('confirmar_senha', 'iconConfirmarSenha')">
+                            <i class="bi bi-eye-slash" id="iconConfirmarSenha"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <button type="submit" id="btnSubmit" class="btn btn-uniceplac w-100 py-2 mb-2">
+                    <i class="bi bi-person-plus-fill me-2"></i>Finalizar Cadastro
+                </button>
+
+                <div class="text-center position-relative my-3">
+                    <hr>
+                    <span class="position-absolute top-50 start-50 translate-middle bg-white px-2 text-muted small">ou</span>
+                </div>
+
+                <a href="login_google.php" class="btn btn-google w-100 d-flex align-items-center justify-content-center py-2 mb-2">
+                    <img src="https://authjs.dev/img/providers/google.svg" alt="Google" style="height: 16px; margin-right: 8px;">
+                    Usar conta Institucional
+                </a>
+
+                <div class="text-center mt-3 pt-1">
+                    <span class="text-muted small">Já tem conta?</span>
+                    <a href="index.php" class="text-decoration-none small fw-bold" style="color: var(--roxo-uniceplac);">Faça Login</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Função para mostrar/esconder senha (Manteve o seu original)
+    function togglePassword(inputId, iconId) {
+        const passwordInput = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.classList.replace('bi-eye-slash', 'bi-eye');
+        } else {
+            passwordInput.type = 'password';
+            icon.classList.replace('bi-eye', 'bi-eye-slash');
+        }
+    }
+
+    // --- NOVA LÓGICA: Enviar dados para o CadastroRestService via JavaScript (Fetch API) ---
+    document.getElementById('formCadastro').addEventListener('submit', async function(evento) {
+        evento.preventDefault(); // Impede que a página recarregue ao clicar no botão
+        
+        const btnSubmit = document.getElementById('btnSubmit');
+        const divMensagem = document.getElementById('mensagemRetorno');
+
+        // Efeito de carregamento no botão
+        btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processando...';
+        btnSubmit.disabled = true;
+        divMensagem.innerHTML = ''; 
+
+        // Coleta os dados digitados
+        const dados = {
+            nome: document.getElementById('nome').value,
+            email: document.getElementById('email').value,
+            senha: document.getElementById('senha').value,
+            confirmar_senha: document.getElementById('confirmar_senha').value
+        };
+
+        try {
+            // Chama a sua API que testamos no Insomnia
+            const resposta = await fetch('CadastroRestService.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+
+            // Converte o retorno para JSON
+            const resultado = await resposta.json();
+
+            // Mostra na tela a mensagem que a API retornou
+            if (resposta.ok) { // Status 201
+                divMensagem.innerHTML = `<div class="alert alert-success py-2 small">${resultado.message}</div>`;
+                document.getElementById('formCadastro').reset(); // Limpa os campos
+            } else { // Status 400
+                divMensagem.innerHTML = `<div class="alert alert-danger py-2 small">${resultado.message}</div>`;
+            }
+
+        } catch (erro) {
+            divMensagem.innerHTML = `<div class="alert alert-danger py-2 small">Erro ao conectar com o servidor.</div>`;
+        } finally {
+            // Volta o botão ao normal
+            btnSubmit.innerHTML = '<i class="bi bi-person-plus-fill me-2"></i>Finalizar Cadastro';
+            btnSubmit.disabled = false;
+        }
+    });
+</script>
+
+</body>
+</html>
