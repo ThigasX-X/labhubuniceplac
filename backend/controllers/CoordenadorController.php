@@ -3,7 +3,7 @@ require_once BACKEND_PATH . '/models/Agendamento.php';
 require_once BACKEND_PATH . '/models/Laboratorio.php';
 require_once BACKEND_PATH . '/models/Disciplina.php';
 require_once BACKEND_PATH . '/models/Usuario.php';
-require_once BACKEND_PATH . '/models/QuadroHorario.php';
+require_once BACKEND_PATH . '/DAOImpl/QuadroHorarioDAOImpl.php';
 require_once BACKEND_PATH . '/models/ChamadoSuporte.php';
 require_once BACKEND_PATH . '/helpers/Auth.php';
 require_once BACKEND_PATH . '/helpers/Upload.php';
@@ -33,7 +33,7 @@ class CoordenadorController extends BaseController
         $labModel         = new Laboratorio($this->pdo);
         $discModel        = new Disciplina($this->pdo);
         $usuarioModel     = new Usuario($this->pdo);
-        $quadroModel      = new QuadroHorario($this->pdo);
+        $quadroModel      = new QuadroHorarioDAOImpl($this->pdo);
 
         // --- UPLOAD DE FOTO ---
         if (isset($_FILES['nova_foto']) && $_FILES['nova_foto']['error'] === UPLOAD_ERR_OK) {
@@ -126,28 +126,41 @@ class CoordenadorController extends BaseController
         $laboratoriosCadastrados = $labModel->all();
         $disciplinas            = $discModel->all();
 
-        $cursosCadastrados = $semestres = $blocos = $andares = $salas = [];
-        foreach (['cursos', 'semestres', 'blocos', 'andares', 'salas'] as $tabela) {
-            try {
-                $$tabela = $this->pdo->query("SELECT * FROM {$tabela} ORDER BY nome")->fetchAll();
-            } catch (Exception) {}
-        }
-        $cursosCadastrados = $cursos ?? [];
-        $semestres         = $semestres ?? [];
-        $blocosCadastrados = $blocos ?? [];
-        $andaresCadastrados = $andares ?? [];
-        $salasCadastradas  = $salas ?? [];
+        $cursosCadastrados  = $this->pdo->query("SELECT * FROM cursos ORDER BY nome")->fetchAll();
+        $semestres          = $this->pdo->query("SELECT * FROM semestres ORDER BY nome")->fetchAll();
+        $blocosCadastrados  = $this->pdo->query("SELECT * FROM blocos ORDER BY nome")->fetchAll();
+        $andaresCadastrados = $this->pdo->query(
+            "SELECT a.*, b.nome AS bloco_nome
+             FROM andares a JOIN blocos b ON a.id_bloco = b.id
+             ORDER BY b.nome, a.nome"
+        )->fetchAll();
+        $salasCadastradas   = $this->pdo->query(
+            "SELECT s.*, a.nome AS andar_nome, b.nome AS bloco_nome, a.id_bloco
+             FROM salas s
+             JOIN andares a ON s.id_andar = a.id
+             JOIN blocos  b ON a.id_bloco = b.id
+             ORDER BY b.nome, a.nome, s.nome"
+        )->fetchAll();
 
-        $listaEnsalamentos = [];
-        try {
-            $listaEnsalamentos = $this->pdo->query(
-                "SELECT e.*, u.nome as professor, d.nome as disciplina
-                 FROM ensalamento e
-                 JOIN usuarios u    ON e.id_professor  = u.id
-                 JOIN disciplinas d ON e.id_disciplina = d.id
-                 ORDER BY e.curso, e.turno, e.bloco"
-            )->fetchAll();
-        } catch (Exception) {}
+        $listaEnsalamentos = $this->pdo->query(
+            "SELECT e.*,
+                    u.nome   AS professor,
+                    d.nome   AS disciplina,
+                    c.nome   AS curso,
+                    s.nome   AS sala,
+                    a.nome   AS andar,
+                    b.nome   AS bloco,
+                    a.id     AS id_andar,
+                    b.id     AS id_bloco
+             FROM ensalamento e
+             JOIN usuarios    u ON e.id_professor  = u.id
+             JOIN disciplinas d ON e.id_disciplina = d.id
+             JOIN cursos      c ON e.id_curso      = c.id
+             JOIN salas       s ON e.id_sala       = s.id
+             JOIN andares     a ON s.id_andar      = a.id
+             JOIN blocos      b ON a.id_bloco      = b.id
+             ORDER BY c.nome, e.turno, b.nome, a.nome, s.nome"
+        )->fetchAll();
 
         $listaQuadros     = $quadroModel->all();
         $quadroSelecionado = $_GET['q_id'] ?? (count($listaQuadros) > 0 ? $listaQuadros[0]['id'] : null);
@@ -250,14 +263,14 @@ class CoordenadorController extends BaseController
     private function moverAula(): array
     {
         try {
-            (new QuadroHorario($this->pdo))->moverAula((int) $_POST['id_aula'], $_POST['novo_dia']);
+            (new QuadroHorarioDAOImpl($this->pdo))->moverAula((int) $_POST['id_aula'], $_POST['novo_dia']);
             return ['success' => true];
         } catch (PDOException $e) {
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
 
-    private function processarAulaQuadro(QuadroHorario $quadroModel): string
+    private function processarAulaQuadro(QuadroHorarioDAOImpl $quadroModel): string
     {
         if (empty($_POST['id_quadro_ativo'])) {
             return '<div class="alert alert-danger alert-autohide mb-4">Selecione um Cenário antes de alocar aulas.</div>';
@@ -265,22 +278,20 @@ class CoordenadorController extends BaseController
 
         $modalidade = $_POST['modalidade'];
         $dados = [
-            'id_quadro'          => $_POST['id_quadro_ativo'],
-            'turno'              => $_POST['turno_aula'],
-            'dia_semana'         => $_POST['dia_semana'],
-            'curso'              => $_POST['curso_aula'],
-            'semestre'           => $_POST['semestre_aula'],
-            'id_disciplina'      => $_POST['id_disciplina_aula'],
-            'modalidade'         => $modalidade,
-            'numero_alunos'      => (int) $_POST['numero_alunos'],
-            'id_professor'       => $modalidade === 'EAD' ? null : (empty($_POST['id_professor_aula']) ? null : $_POST['id_professor_aula']),
-            'id_laboratorio'     => $modalidade === 'EAD' ? null : (empty($_POST['id_laboratorio_aula']) ? null : $_POST['id_laboratorio_aula']),
-            'bloco'              => $modalidade === 'EAD' ? null : (empty($_POST['bloco_aula']) ? null : $_POST['bloco_aula']),
-            'andar'              => $modalidade === 'EAD' ? null : (empty($_POST['andar_aula']) ? null : $_POST['andar_aula']),
-            'sala'               => $modalidade === 'EAD' ? null : (empty($_POST['sala_aula']) ? null : $_POST['sala_aula']),
-            'horario'            => $_POST['horario_aula'],
+            'id_quadro'           => $_POST['id_quadro_ativo'],
+            'turno'               => $_POST['turno_aula'],
+            'dia_semana'          => $_POST['dia_semana'],
+            'id_curso'            => (int) $_POST['id_curso_aula'],
+            'id_semestre'         => (int) $_POST['id_semestre_aula'],
+            'id_disciplina'       => (int) $_POST['id_disciplina_aula'],
+            'modalidade'          => $modalidade,
+            'numero_alunos'       => (int) $_POST['numero_alunos'],
+            'id_professor'        => $modalidade === 'EAD' ? null : (empty($_POST['id_professor_aula'])   ? null : (int) $_POST['id_professor_aula']),
+            'id_laboratorio'      => $modalidade === 'EAD' ? null : (empty($_POST['id_laboratorio_aula']) ? null : (int) $_POST['id_laboratorio_aula']),
+            'id_sala'             => $modalidade === 'EAD' ? null : (empty($_POST['id_sala_aula'])        ? null : (int) $_POST['id_sala_aula']),
+            'horario'             => $_POST['horario_aula'],
             'carga_horaria_total' => (int) ($_POST['carga_horaria_total'] ?? 2),
-            'horas_laboratorio'  => (int) ($_POST['horas_laboratorio'] ?? 0),
+            'horas_laboratorio'   => (int) ($_POST['horas_laboratorio'] ?? 0),
         ];
 
         $editando = isset($_POST['editar_aula_quadro']);
@@ -355,11 +366,11 @@ class CoordenadorController extends BaseController
             'salvar_bloco'     => fn() => $this->pdo->prepare("INSERT INTO blocos(nome) VALUES(?)")->execute([trim($_POST['nome_bloco'])]),
             'editar_bloco'     => fn() => $this->pdo->prepare("UPDATE blocos SET nome=? WHERE id=?")->execute([trim($_POST['nome_bloco']),$_POST['id_bloco']]),
             'excluir_bloco'    => fn() => $this->pdo->prepare("DELETE FROM blocos WHERE id=?")->execute([$_POST['id_bloco']]),
-            'salvar_andar'     => fn() => $this->pdo->prepare("INSERT INTO andares(nome) VALUES(?)")->execute([trim($_POST['nome_andar'])]),
-            'editar_andar'     => fn() => $this->pdo->prepare("UPDATE andares SET nome=? WHERE id=?")->execute([trim($_POST['nome_andar']),$_POST['id_andar']]),
+            'salvar_andar'     => fn() => $this->pdo->prepare("INSERT INTO andares(id_bloco,nome) VALUES(?,?)")->execute([(int)$_POST['id_bloco'],trim($_POST['nome_andar'])]),
+            'editar_andar'     => fn() => $this->pdo->prepare("UPDATE andares SET id_bloco=?,nome=? WHERE id=?")->execute([(int)$_POST['id_bloco'],trim($_POST['nome_andar']),$_POST['id_andar']]),
             'excluir_andar'    => fn() => $this->pdo->prepare("DELETE FROM andares WHERE id=?")->execute([$_POST['id_andar']]),
-            'salvar_sala'      => fn() => $this->pdo->prepare("INSERT INTO salas(nome) VALUES(?)")->execute([trim($_POST['nome_sala'])]),
-            'editar_sala'      => fn() => $this->pdo->prepare("UPDATE salas SET nome=? WHERE id=?")->execute([trim($_POST['nome_sala']),$_POST['id_sala']]),
+            'salvar_sala'      => fn() => $this->pdo->prepare("INSERT INTO salas(id_andar,nome) VALUES(?,?)")->execute([(int)$_POST['id_andar'],trim($_POST['nome_sala'])]),
+            'editar_sala'      => fn() => $this->pdo->prepare("UPDATE salas SET id_andar=?,nome=? WHERE id=?")->execute([(int)$_POST['id_andar'],trim($_POST['nome_sala']),$_POST['id_sala']]),
             'excluir_sala'     => fn() => $this->pdo->prepare("DELETE FROM salas WHERE id=?")->execute([$_POST['id_sala']]),
         ];
 
@@ -375,19 +386,39 @@ class CoordenadorController extends BaseController
         if (!$this->isPost()) return $mensagem;
 
         if (isset($_POST['salvar_ensalamento'])) {
-            $check = $this->pdo->prepare("SELECT u.nome as prof_existente FROM ensalamento e JOIN usuarios u ON e.id_professor=u.id WHERE e.bloco=? AND e.andar=? AND e.sala=? AND e.turno=?");
-            $check->execute([$_POST['bloco'], $_POST['andar'], $_POST['sala'], $_POST['turno']]);
+            $check = $this->pdo->prepare(
+                "SELECT u.nome AS prof_existente
+                 FROM ensalamento e
+                 JOIN usuarios u ON e.id_professor = u.id
+                 WHERE e.id_sala = ? AND e.turno = ?"
+            );
+            $check->execute([(int) $_POST['id_sala'], $_POST['turno']]);
             if ($check->rowCount() > 0) {
                 $c = $check->fetch();
                 return '<div class="alert alert-warning alert-autohide mb-4"><strong>Choque de Sala!</strong> Em uso por Prof. ' . htmlspecialchars($c['prof_existente']) . '.</div>';
             }
-            $this->pdo->prepare("INSERT INTO ensalamento(id_professor,id_disciplina,curso,bloco,andar,sala,categoria,turno) VALUES(?,?,?,?,?,?,?,?)")
-                ->execute([$_POST['id_professor'],$_POST['id_disciplina'],$_POST['curso'],$_POST['bloco'],$_POST['andar'],$_POST['sala'],$_POST['categoria'],$_POST['turno']]);
+            $this->pdo->prepare("INSERT INTO ensalamento(id_professor,id_disciplina,id_curso,id_sala,categoria,turno) VALUES(?,?,?,?,?,?)")
+                ->execute([
+                    (int) $_POST['id_professor'],
+                    (int) $_POST['id_disciplina'],
+                    (int) $_POST['id_curso'],
+                    (int) $_POST['id_sala'],
+                    $_POST['categoria'] ?? null,
+                    $_POST['turno'],
+                ]);
             return '<div class="alert alert-success alert-autohide mb-4">Ensalamento registrado!</div>';
         }
         if (isset($_POST['editar_ensalamento'])) {
-            $this->pdo->prepare("UPDATE ensalamento SET id_professor=?,id_disciplina=?,curso=?,bloco=?,andar=?,sala=?,categoria=?,turno=? WHERE id=?")
-                ->execute([$_POST['id_professor'],$_POST['id_disciplina'],$_POST['curso'],$_POST['bloco'],$_POST['andar'],$_POST['sala'],$_POST['categoria'],$_POST['turno'],$_POST['id_ensalamento']]);
+            $this->pdo->prepare("UPDATE ensalamento SET id_professor=?,id_disciplina=?,id_curso=?,id_sala=?,categoria=?,turno=? WHERE id=?")
+                ->execute([
+                    (int) $_POST['id_professor'],
+                    (int) $_POST['id_disciplina'],
+                    (int) $_POST['id_curso'],
+                    (int) $_POST['id_sala'],
+                    $_POST['categoria'] ?? null,
+                    $_POST['turno'],
+                    (int) $_POST['id_ensalamento'],
+                ]);
             return '<div class="alert alert-primary alert-autohide mb-4">Ensalamento atualizado!</div>';
         }
         if (isset($_POST['excluir_ensalamento'])) {
@@ -467,7 +498,14 @@ class CoordenadorController extends BaseController
             $taxaOcupacao  = $capGlobal > 0 ? round(($usoGlobal / $capGlobal) * 100) : 0;
             $taxaOciosidade = 100 - $taxaOcupacao;
 
-            $stmt = $this->pdo->prepare("SELECT curso, SUM(carga_horaria_total) as total FROM quadro_aulas WHERE id_quadro=? GROUP BY curso ORDER BY total DESC");
+            $stmt = $this->pdo->prepare(
+                "SELECT c.nome AS curso, SUM(qa.carga_horaria_total) AS total
+                 FROM quadro_aulas qa
+                 JOIN cursos c ON qa.id_curso = c.id
+                 WHERE qa.id_quadro = ?
+                 GROUP BY c.id, c.nome
+                 ORDER BY total DESC"
+            );
             $stmt->execute([$idQuadro]);
             foreach ($stmt->fetchAll() as $rc) {
                 $graficoNomeCursos[]  = $rc['curso'];
