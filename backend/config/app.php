@@ -15,9 +15,13 @@ if (!defined('APP_PATH')) {
     define('APP_PATH', BACKEND_PATH);
 }
 
+require_once ROOT_PATH . '/vendor/autoload.php';
+
+Dotenv\Dotenv::createImmutable(ROOT_PATH)->safeLoad();
+
 date_default_timezone_set('America/Sao_Paulo');
 
 if (!defined('APP_NAME'))       define('APP_NAME', 'UNICEPLAC - Central de Reservas');
 if (!defined('UPLOAD_DIR'))     define('UPLOAD_DIR', ROOT_PATH . '/public/uploads/');
 if (!defined('UPLOAD_URL'))     define('UPLOAD_URL', '/uploads/');
-if (!defined('DEFAULT_AVATAR')) define('DEFAULT_AVATAR', '/assets/images/padrao-usuario.png');
+if (!defined('DEFAULT_AVATAR')) define('DEFAULT_AVATAR', '/assets/images/uniceplac.png');
