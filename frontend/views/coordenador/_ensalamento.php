@@ -80,23 +80,77 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-semibold small">Curso</label>
-                        <input type="text" name="curso" class="form-control rounded-3" placeholder="Ex: Ciência da Computação" required>
+                        <select name="id_curso" class="form-select rounded-3" required>
+                            <option value="">Selecione...</option>
+                            <?php foreach ($cursosCadastrados as $c): ?>
+                                <option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['nome']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-semibold small">Turno</label>
                         <select name="turno" class="form-select rounded-3" required>
                             <option value="">Selecione...</option>
-                            <option>Manhã</option><option>Tarde</option><option>Noite</option>
+                            <option>Matutino</option><option>Vespertino</option><option>Noturno</option>
                         </select>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label fw-semibold small">Bloco / Sala</label>
-                        <input type="text" name="bloco" class="form-control rounded-3" placeholder="Ex: Bloco A - Sala 101">
+                        <label class="form-label fw-semibold small">Categoria</label>
+                        <input type="text" name="categoria" class="form-control rounded-3" placeholder="Opcional">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Bloco</label>
+                        <select name="id_bloco" class="form-select rounded-3 ensal-bloco" required>
+                            <option value="">Selecione...</option>
+                            <?php foreach ($blocosCadastrados as $b): ?>
+                                <option value="<?= $b['id'] ?>"><?= htmlspecialchars($b['nome']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Andar</label>
+                        <select name="id_andar" class="form-select rounded-3 ensal-andar" required disabled>
+                            <option value="">Selecione um bloco</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Sala</label>
+                        <select name="id_sala" class="form-select rounded-3 ensal-sala" required disabled>
+                            <option value="">Selecione um andar</option>
+                        </select>
                     </div>
                     <div class="col-12">
                         <button type="submit" class="btn btn-primary w-100 rounded-pill fw-semibold">Salvar Ensalamento</button>
                     </div>
                 </form>
+                <script>
+                (function () {
+                    const bloco = document.querySelector('#modalEnsalamento .ensal-bloco');
+                    const andar = document.querySelector('#modalEnsalamento .ensal-andar');
+                    const sala  = document.querySelector('#modalEnsalamento .ensal-sala');
+
+                    const fill = (sel, items, placeholder) => {
+                        sel.innerHTML = `<option value="">${placeholder}</option>` +
+                            items.map(i => `<option value="${i.id}">${i.nome}</option>`).join('');
+                        sel.disabled = items.length === 0;
+                    };
+
+                    bloco.addEventListener('change', async () => {
+                        fill(andar, [], 'Carregando...');
+                        fill(sala,  [], 'Selecione um andar');
+                        if (!bloco.value) return fill(andar, [], 'Selecione um bloco');
+                        const r = await fetch('/index.php?page=api/andares&id_bloco=' + bloco.value);
+                        fill(andar, await r.json(), 'Selecione...');
+                    });
+
+                    andar.addEventListener('change', async () => {
+                        fill(sala, [], 'Carregando...');
+                        if (!andar.value) return fill(sala, [], 'Selecione um andar');
+                        const r = await fetch('/index.php?page=api/salas&id_andar=' + andar.value);
+                        fill(sala, await r.json(), 'Selecione...');
+                    });
+                })();
+                </script>
             </div>
         </div>
     </div>

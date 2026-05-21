@@ -100,9 +100,9 @@
                         <tbody>
                             <?php
                             $turnosPeriodos = [
-                                'Manhã'  => ['1º', '2º', '3º', '4º'],
-                                'Tarde'  => ['1º', '2º', '3º', '4º'],
-                                'Noite'  => ['1º', '2º', '3º'],
+                                'Matutino'   => ['1º', '2º', '3º', '4º'],
+                                'Vespertino' => ['1º', '2º', '3º', '4º'],
+                                'Noturno'    => ['1º', '2º', '3º'],
                             ];
                             foreach ($turnosPeriodos as $turno => $periodos): ?>
                             <tr class="table-secondary">
@@ -172,10 +172,10 @@
             <div class="modal-body">
                 <form method="POST" action="/index.php?page=coordenador" class="row g-3">
                     <input type="hidden" name="salvar_aula_quadro" value="1">
-                    <input type="hidden" name="id_quadro" value="<?= $quadroSelecionado ?>">
+                    <input type="hidden" name="id_quadro_ativo" value="<?= $quadroSelecionado ?>">
                     <div class="col-md-6">
                         <label class="form-label fw-semibold small">Disciplina</label>
-                        <select name="id_disciplina" class="form-select rounded-3" required>
+                        <select name="id_disciplina_aula" class="form-select rounded-3" required>
                             <option value="">Selecione...</option>
                             <?php foreach ($disciplinas as $d): ?>
                                 <option value="<?= $d['id'] ?>"><?= htmlspecialchars($d['nome']) ?></option>
@@ -184,11 +184,37 @@
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold small">Professor</label>
-                        <select name="id_professor" class="form-select rounded-3">
+                        <select name="id_professor_aula" class="form-select rounded-3">
                             <option value="">EAD / Sem professor</option>
                             <?php foreach ($professores as $p): ?>
                                 <option value="<?= $p['id'] ?>"><?= htmlspecialchars($p['nome']) ?></option>
                             <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Curso</label>
+                        <select name="id_curso_aula" class="form-select rounded-3" required>
+                            <option value="">Selecione...</option>
+                            <?php foreach ($cursosCadastrados as $c): ?>
+                                <option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['nome']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Semestre</label>
+                        <select name="id_semestre_aula" class="form-select rounded-3" required>
+                            <option value="">Selecione...</option>
+                            <?php foreach ($semestres as $s): ?>
+                                <option value="<?= $s['id'] ?>"><?= htmlspecialchars($s['nome']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Modalidade</label>
+                        <select name="modalidade" class="form-select rounded-3" required>
+                            <option value="Teórica">Teórica</option>
+                            <option value="Prática">Prática</option>
+                            <option value="EAD">EAD</option>
                         </select>
                     </div>
                     <div class="col-md-4">
@@ -200,30 +226,59 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-semibold small">Turno</label>
-                        <select name="turno" class="form-select rounded-3" required>
+                        <select name="turno_aula" class="form-select rounded-3" required>
                             <option value="">Selecione...</option>
-                            <option>Manhã</option><option>Tarde</option><option>Noite</option>
+                            <option>Matutino</option><option>Vespertino</option><option>Noturno</option>
                         </select>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-semibold small">Horário (Período)</label>
-                        <select name="horario" class="form-select rounded-3" required>
+                        <select name="horario_aula" class="form-select rounded-3" required>
                             <option value="">Selecione...</option>
                             <option>1º</option><option>2º</option><option>3º</option><option>4º</option><option>5º</option><option>6º</option>
                         </select>
                     </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Nº de Alunos</label>
+                        <input type="number" name="numero_alunos" class="form-control rounded-3" min="0" value="0">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Carga Horária Total</label>
+                        <input type="number" name="carga_horaria_total" class="form-control rounded-3" min="0" value="2">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Horas Laboratório</label>
+                        <input type="number" name="horas_laboratorio" class="form-control rounded-3" min="0" value="0">
+                    </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold small">Laboratório (opcional)</label>
-                        <select name="id_laboratorio" class="form-select rounded-3">
+                        <select name="id_laboratorio_aula" class="form-select rounded-3">
                             <option value="">Sem laboratório</option>
                             <?php foreach ($laboratoriosCadastrados as $lab): ?>
                                 <option value="<?= $lab['id'] ?>"><?= htmlspecialchars($lab['nome']) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold small">Sala (opcional)</label>
-                        <input type="text" name="sala" class="form-control rounded-3" placeholder="Ex: Sala 201">
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold small">Bloco</label>
+                        <select class="form-select rounded-3 qa-bloco">
+                            <option value="">—</option>
+                            <?php foreach ($blocosCadastrados as $b): ?>
+                                <option value="<?= $b['id'] ?>"><?= htmlspecialchars($b['nome']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold small">Andar</label>
+                        <select class="form-select rounded-3 qa-andar" disabled>
+                            <option value="">—</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold small">Sala</label>
+                        <select name="id_sala_aula" class="form-select rounded-3 qa-sala" disabled>
+                            <option value="">—</option>
+                        </select>
                     </div>
                     <div class="col-12">
                         <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold w-100">
@@ -231,6 +286,30 @@
                         </button>
                     </div>
                 </form>
+                <script>
+                (function () {
+                    const root = document.querySelector('#modalNovaAula');
+                    const bloco = root.querySelector('.qa-bloco');
+                    const andar = root.querySelector('.qa-andar');
+                    const sala  = root.querySelector('.qa-sala');
+                    const fill = (sel, items, ph) => {
+                        sel.innerHTML = `<option value="">${ph}</option>` + items.map(i => `<option value="${i.id}">${i.nome}</option>`).join('');
+                        sel.disabled = items.length === 0;
+                    };
+                    bloco.addEventListener('change', async () => {
+                        fill(andar, [], 'Carregando...'); fill(sala, [], '—');
+                        if (!bloco.value) return fill(andar, [], '—');
+                        const r = await fetch('/index.php?page=api/andares&id_bloco=' + bloco.value);
+                        fill(andar, await r.json(), 'Selecione...');
+                    });
+                    andar.addEventListener('change', async () => {
+                        fill(sala, [], 'Carregando...');
+                        if (!andar.value) return fill(sala, [], '—');
+                        const r = await fetch('/index.php?page=api/salas&id_andar=' + andar.value);
+                        fill(sala, await r.json(), 'Selecione...');
+                    });
+                })();
+                </script>
             </div>
         </div>
     </div>
@@ -248,10 +327,10 @@
                 <form method="POST" action="/index.php?page=coordenador" class="row g-3" id="formEditarAula">
                     <input type="hidden" name="editar_aula_quadro" value="1">
                     <input type="hidden" name="id_aula_q" id="ea_id">
-                    <input type="hidden" name="id_quadro" value="<?= $quadroSelecionado ?>">
+                    <input type="hidden" name="id_quadro_ativo" value="<?= $quadroSelecionado ?>">
                     <div class="col-md-6">
                         <label class="form-label fw-semibold small">Disciplina</label>
-                        <select name="id_disciplina" id="ea_disc" class="form-select rounded-3" required>
+                        <select name="id_disciplina_aula" id="ea_disc" class="form-select rounded-3" required>
                             <?php foreach ($disciplinas as $d): ?>
                                 <option value="<?= $d['id'] ?>"><?= htmlspecialchars($d['nome']) ?></option>
                             <?php endforeach; ?>
@@ -259,11 +338,35 @@
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold small">Professor</label>
-                        <select name="id_professor" id="ea_prof" class="form-select rounded-3">
+                        <select name="id_professor_aula" id="ea_prof" class="form-select rounded-3">
                             <option value="">EAD / Sem professor</option>
                             <?php foreach ($professores as $p): ?>
                                 <option value="<?= $p['id'] ?>"><?= htmlspecialchars($p['nome']) ?></option>
                             <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Curso</label>
+                        <select name="id_curso_aula" id="ea_curso" class="form-select rounded-3" required>
+                            <?php foreach ($cursosCadastrados as $c): ?>
+                                <option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['nome']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Semestre</label>
+                        <select name="id_semestre_aula" id="ea_sem" class="form-select rounded-3" required>
+                            <?php foreach ($semestres as $s): ?>
+                                <option value="<?= $s['id'] ?>"><?= htmlspecialchars($s['nome']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Modalidade</label>
+                        <select name="modalidade" id="ea_mod" class="form-select rounded-3" required>
+                            <option value="Teórica">Teórica</option>
+                            <option value="Prática">Prática</option>
+                            <option value="EAD">EAD</option>
                         </select>
                     </div>
                     <div class="col-md-4">
@@ -274,48 +377,123 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-semibold small">Turno</label>
-                        <select name="turno" id="ea_turno" class="form-select rounded-3" required>
-                            <option>Manhã</option><option>Tarde</option><option>Noite</option>
+                        <select name="turno_aula" id="ea_turno" class="form-select rounded-3" required>
+                            <option>Matutino</option><option>Vespertino</option><option>Noturno</option>
                         </select>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-semibold small">Horário (Período)</label>
-                        <select name="horario" id="ea_horario" class="form-select rounded-3" required>
+                        <select name="horario_aula" id="ea_horario" class="form-select rounded-3" required>
                             <option>1º</option><option>2º</option><option>3º</option><option>4º</option><option>5º</option><option>6º</option>
                         </select>
                     </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Nº de Alunos</label>
+                        <input type="number" name="numero_alunos" id="ea_alunos" class="form-control rounded-3" min="0" value="0">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Carga Horária Total</label>
+                        <input type="number" name="carga_horaria_total" id="ea_carga" class="form-control rounded-3" min="0" value="2">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Horas Laboratório</label>
+                        <input type="number" name="horas_laboratorio" id="ea_hlab" class="form-control rounded-3" min="0" value="0">
+                    </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold small">Laboratório (opcional)</label>
-                        <select name="id_laboratorio" id="ea_lab" class="form-select rounded-3">
+                        <select name="id_laboratorio_aula" id="ea_lab" class="form-select rounded-3">
                             <option value="">Sem laboratório</option>
                             <?php foreach ($laboratoriosCadastrados as $lab): ?>
                                 <option value="<?= $lab['id'] ?>"><?= htmlspecialchars($lab['nome']) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold small">Sala (opcional)</label>
-                        <input type="text" name="sala" id="ea_sala" class="form-control rounded-3" placeholder="Ex: Sala 201">
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold small">Bloco</label>
+                        <select id="ea_bloco" class="form-select rounded-3 qa-bloco">
+                            <option value="">—</option>
+                            <?php foreach ($blocosCadastrados as $b): ?>
+                                <option value="<?= $b['id'] ?>"><?= htmlspecialchars($b['nome']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold small">Andar</label>
+                        <select id="ea_andar" class="form-select rounded-3 qa-andar" disabled>
+                            <option value="">—</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold small">Sala</label>
+                        <select name="id_sala_aula" id="ea_sala" class="form-select rounded-3 qa-sala" disabled>
+                            <option value="">—</option>
+                        </select>
                     </div>
                     <div class="col-12">
                         <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold w-100">Salvar Alterações</button>
                     </div>
                 </form>
+                <script>
+                (function () {
+                    const root = document.querySelector('#modalEditarAula');
+                    const bloco = root.querySelector('.qa-bloco');
+                    const andar = root.querySelector('.qa-andar');
+                    const sala  = root.querySelector('.qa-sala');
+                    const fill = (sel, items, ph) => {
+                        sel.innerHTML = `<option value="">${ph}</option>` + items.map(i => `<option value="${i.id}">${i.nome}</option>`).join('');
+                        sel.disabled = items.length === 0;
+                    };
+                    bloco.addEventListener('change', async () => {
+                        fill(andar, [], 'Carregando...'); fill(sala, [], '—');
+                        if (!bloco.value) return fill(andar, [], '—');
+                        const r = await fetch('/index.php?page=api/andares&id_bloco=' + bloco.value);
+                        fill(andar, await r.json(), 'Selecione...');
+                    });
+                    andar.addEventListener('change', async () => {
+                        fill(sala, [], 'Carregando...');
+                        if (!andar.value) return fill(sala, [], '—');
+                        const r = await fetch('/index.php?page=api/salas&id_andar=' + andar.value);
+                        fill(sala, await r.json(), 'Selecione...');
+                    });
+                })();
+                </script>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-function abrirEditarAula(aula) {
-    document.getElementById('ea_id').value     = aula.id;
-    document.getElementById('ea_disc').value   = aula.id_disciplina;
-    document.getElementById('ea_prof').value   = aula.id_professor || '';
-    document.getElementById('ea_dia').value    = aula.dia_semana;
-    document.getElementById('ea_turno').value  = aula.turno;
-    document.getElementById('ea_horario').value= aula.horario;
-    document.getElementById('ea_lab').value    = aula.id_laboratorio || '';
-    document.getElementById('ea_sala').value   = aula.sala || '';
+async function abrirEditarAula(aula) {
+    document.getElementById('ea_id').value      = aula.id;
+    document.getElementById('ea_disc').value    = aula.id_disciplina;
+    document.getElementById('ea_prof').value    = aula.id_professor || '';
+    document.getElementById('ea_curso').value   = aula.id_curso || '';
+    document.getElementById('ea_sem').value     = aula.id_semestre || '';
+    document.getElementById('ea_mod').value     = aula.modalidade || 'Teórica';
+    document.getElementById('ea_dia').value     = aula.dia_semana;
+    document.getElementById('ea_turno').value   = aula.turno;
+    document.getElementById('ea_horario').value = aula.horario;
+    document.getElementById('ea_alunos').value  = aula.numero_alunos || 0;
+    document.getElementById('ea_carga').value   = aula.carga_horaria_total || 2;
+    document.getElementById('ea_hlab').value    = aula.horas_laboratorio || 0;
+    document.getElementById('ea_lab').value     = aula.id_laboratorio || '';
+
+    // Hidratar cascata bloco→andar→sala a partir do id_sala
+    const eaBloco = document.getElementById('ea_bloco');
+    const eaAndar = document.getElementById('ea_andar');
+    const eaSala  = document.getElementById('ea_sala');
+    eaBloco.value = ''; eaAndar.innerHTML = '<option value="">—</option>'; eaAndar.disabled = true;
+    eaSala.innerHTML  = '<option value="">—</option>'; eaSala.disabled = true;
+
+    if (aula.id_bloco && aula.id_andar && aula.id_sala) {
+        eaBloco.value = aula.id_bloco;
+        const andares = await fetch('/index.php?page=api/andares&id_bloco=' + aula.id_bloco).then(r => r.json());
+        eaAndar.innerHTML = '<option value="">Selecione...</option>' + andares.map(i => `<option value="${i.id}">${i.nome}</option>`).join('');
+        eaAndar.disabled = false; eaAndar.value = aula.id_andar;
+        const salas = await fetch('/index.php?page=api/salas&id_andar=' + aula.id_andar).then(r => r.json());
+        eaSala.innerHTML = '<option value="">Selecione...</option>' + salas.map(i => `<option value="${i.id}">${i.nome}</option>`).join('');
+        eaSala.disabled = false; eaSala.value = aula.id_sala;
+    }
     new bootstrap.Modal(document.getElementById('modalEditarAula')).show();
 }
 </script>

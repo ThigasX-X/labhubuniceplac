@@ -1,12 +1,12 @@
 <?php
 $secoesCadastro = [
-    ['id' => 'labs',       'titulo' => 'Laboratórios',  'icon' => 'bi-pc-display',     'cor' => '#6366f1', 'campo' => 'nome_lab',        'post' => 'salvar_lab',     'excluir' => 'excluir_lab',     'items' => $laboratoriosCadastrados, 'extra' => true],
-    ['id' => 'discs',      'titulo' => 'Disciplinas',   'icon' => 'bi-book',           'cor' => '#10b981', 'campo' => 'nome_disciplina', 'post' => 'salvar_disciplina','excluir' => 'excluir_disciplina','items' => $disciplinas,             'extra' => false],
-    ['id' => 'cursos',     'titulo' => 'Cursos',        'icon' => 'bi-mortarboard',    'cor' => '#f59e0b', 'campo' => 'nome_curso',      'post' => 'salvar_curso',   'excluir' => 'excluir_curso',   'items' => $cursosCadastrados,        'extra' => false],
-    ['id' => 'semestres',  'titulo' => 'Semestres',     'icon' => 'bi-calendar2-week', 'cor' => '#3b82f6', 'campo' => 'nome_semestre',   'post' => 'salvar_semestre','excluir' => 'excluir_semestre','items' => $semestres,               'extra' => false],
-    ['id' => 'blocos',     'titulo' => 'Blocos',        'icon' => 'bi-building',       'cor' => '#8b5cf6', 'campo' => 'nome_bloco',      'post' => 'salvar_bloco',   'excluir' => 'excluir_bloco',   'items' => $blocosCadastrados,        'extra' => false],
-    ['id' => 'andares',    'titulo' => 'Andares',       'icon' => 'bi-layers',         'cor' => '#ec4899', 'campo' => 'nome_andar',      'post' => 'salvar_andar',   'excluir' => 'excluir_andar',   'items' => $andaresCadastrados,       'extra' => false],
-    ['id' => 'salas',      'titulo' => 'Salas',         'icon' => 'bi-door-closed',    'cor' => '#ef4444', 'campo' => 'nome_sala',       'post' => 'salvar_sala',    'excluir' => 'excluir_sala',    'items' => $salasCadastradas,         'extra' => false],
+    ['id' => 'labs',      'titulo' => 'Laboratórios',  'icon' => 'bi-pc-display',     'cor' => '#6366f1', 'campo' => 'nome_lab',        'idField' => 'id_lab',        'post' => 'salvar_lab',       'excluir' => 'excluir_lab',       'items' => $laboratoriosCadastrados, 'parent' => null],
+    ['id' => 'discs',     'titulo' => 'Disciplinas',   'icon' => 'bi-book',           'cor' => '#10b981', 'campo' => 'nome_disciplina', 'idField' => 'id_disciplina', 'post' => 'salvar_disciplina','excluir' => 'excluir_disciplina','items' => $disciplinas,             'parent' => null],
+    ['id' => 'cursos',    'titulo' => 'Cursos',        'icon' => 'bi-mortarboard',    'cor' => '#f59e0b', 'campo' => 'nome_curso',      'idField' => 'id_curso',      'post' => 'salvar_curso',     'excluir' => 'excluir_curso',     'items' => $cursosCadastrados,       'parent' => null],
+    ['id' => 'semestres', 'titulo' => 'Semestres',     'icon' => 'bi-calendar2-week', 'cor' => '#3b82f6', 'campo' => 'nome_semestre',   'idField' => 'id_semestre',   'post' => 'salvar_semestre',  'excluir' => 'excluir_semestre',  'items' => $semestres,               'parent' => null],
+    ['id' => 'blocos',    'titulo' => 'Blocos',        'icon' => 'bi-building',       'cor' => '#8b5cf6', 'campo' => 'nome_bloco',      'idField' => 'id_bloco',      'post' => 'salvar_bloco',     'excluir' => 'excluir_bloco',     'items' => $blocosCadastrados,       'parent' => null],
+    ['id' => 'andares',   'titulo' => 'Andares',       'icon' => 'bi-layers',         'cor' => '#ec4899', 'campo' => 'nome_andar',      'idField' => 'id_andar',      'post' => 'salvar_andar',     'excluir' => 'excluir_andar',     'items' => $andaresCadastrados,      'parent' => ['name' => 'id_bloco', 'label' => 'Bloco', 'items' => $blocosCadastrados,        'displayKey' => 'bloco_nome']],
+    ['id' => 'salas',     'titulo' => 'Salas',         'icon' => 'bi-door-closed',    'cor' => '#ef4444', 'campo' => 'nome_sala',       'idField' => 'id_sala',       'post' => 'salvar_sala',      'excluir' => 'excluir_sala',      'items' => $salasCadastradas,        'parent' => ['name' => 'id_andar', 'label' => 'Andar', 'items' => $andaresCadastrados,       'displayKey' => 'andar_nome']],
 ];
 ?>
 
@@ -31,14 +31,30 @@ $secoesCadastro = [
             <div class="card-body border-bottom">
                 <form method="POST" action="/index.php?page=coordenador" class="row g-2 align-items-end">
                     <input type="hidden" name="<?= $sec['post'] ?>" value="1">
+                    <?php if ($sec['parent']): ?>
+                    <div class="col-12">
+                        <select name="<?= $sec['parent']['name'] ?>" class="form-select form-select-sm rounded-3" required>
+                            <option value=""><?= $sec['parent']['label'] ?>...</option>
+                            <?php foreach ($sec['parent']['items'] as $p): ?>
+                                <option value="<?= $p['id'] ?>"><?= htmlspecialchars($p['nome']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <?php endif; ?>
                     <div class="col">
                         <input type="text" name="<?= $sec['campo'] ?>" class="form-control form-control-sm rounded-3"
                                placeholder="Nome..." required>
                     </div>
-                    <?php if ($sec['extra']): ?>
+                    <?php if ($sec['id'] === 'labs'): ?>
                     <div class="col-auto">
-                        <input type="number" name="capacidade" class="form-control form-control-sm rounded-3"
-                               placeholder="Capacidade" min="1" style="width:120px;">
+                        <input type="number" name="capacidade_lab" class="form-control form-control-sm rounded-3"
+                               placeholder="Capacidade" min="1" style="width:120px;" required>
+                    </div>
+                    <div class="col-12">
+                        <input type="text" name="localizacao_lab" class="form-control form-control-sm rounded-3" placeholder="Localização (opcional)">
+                    </div>
+                    <div class="col-12">
+                        <input type="text" name="andar_lab" class="form-control form-control-sm rounded-3" placeholder="Andar (opcional)">
                     </div>
                     <?php endif; ?>
                     <div class="col-auto">
@@ -52,15 +68,20 @@ $secoesCadastro = [
             <ul class="list-group list-group-flush" style="max-height:280px;overflow-y:auto;">
                 <?php foreach ($sec['items'] as $item): ?>
                 <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-3">
-                    <span class="fw-semibold small"><?= htmlspecialchars($item['nome']) ?></span>
+                    <span class="fw-semibold small">
+                        <?php if ($sec['parent'] && !empty($item[$sec['parent']['displayKey']])): ?>
+                            <span class="text-muted"><?= htmlspecialchars($item[$sec['parent']['displayKey']]) ?> /</span>
+                        <?php endif; ?>
+                        <?= htmlspecialchars($item['nome']) ?>
+                    </span>
                     <div class="d-flex align-items-center gap-2">
-                        <?php if ($sec['extra'] && !empty($item['capacidade'])): ?>
+                        <?php if ($sec['id'] === 'labs' && !empty($item['capacidade'])): ?>
                             <span class="badge bg-light text-muted border"><?= $item['capacidade'] ?> lugares</span>
                         <?php endif; ?>
                         <form method="POST" action="/index.php?page=coordenador" class="d-inline"
                               onsubmit="return confirm('Excluir?')">
                             <input type="hidden" name="<?= $sec['excluir'] ?>" value="1">
-                            <input type="hidden" name="id_item" value="<?= $item['id'] ?>">
+                            <input type="hidden" name="<?= $sec['idField'] ?>" value="<?= $item['id'] ?>">
                             <button type="submit" class="btn btn-sm btn-link text-danger p-0">
                                 <i class="bi bi-trash"></i>
                             </button>
