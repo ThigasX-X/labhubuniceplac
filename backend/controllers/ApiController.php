@@ -53,4 +53,22 @@ class ApiController extends BaseController
 
         $this->json(['qtd_suporte' => $qtd, 'html_suporte' => $html]);
     }
+
+    public function andaresPorBloco(): void
+    {
+        $idBloco = (int) ($_GET['id_bloco'] ?? 0);
+        if ($idBloco <= 0) { $this->json([]); }
+        $stmt = $this->pdo->prepare("SELECT id, nome FROM andares WHERE id_bloco = ? ORDER BY nome");
+        $stmt->execute([$idBloco]);
+        $this->json($stmt->fetchAll());
+    }
+
+    public function salasPorAndar(): void
+    {
+        $idAndar = (int) ($_GET['id_andar'] ?? 0);
+        if ($idAndar <= 0) { $this->json([]); }
+        $stmt = $this->pdo->prepare("SELECT id, nome FROM salas WHERE id_andar = ? ORDER BY nome");
+        $stmt->execute([$idAndar]);
+        $this->json($stmt->fetchAll());
+    }
 }

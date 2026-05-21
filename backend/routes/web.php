@@ -19,4 +19,6 @@ return [
 
     'api/check-sos'        => ['ApiController',  'checkSos'],
     'api/check-sos-status' => ['ApiController',  'checkSosStatus'],
+    'api/andares'          => ['ApiController',  'andaresPorBloco'],
+    'api/salas'            => ['ApiController',  'salasPorAndar'],
 ];
