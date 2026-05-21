@@ -34,32 +34,6 @@
     </nav>
 
     <div class="offcanvas offcanvas-end" tabindex="-1" id="sidebarMenu">
-        <div class="offcanvas-body p-0 d-flex flex-column bg-white">
-            <div class="flex-grow-1 overflow-auto">
-                <div class="p-3 text-muted small fw-bold text-uppercase opacity-75">Meu Planejamento</div>
-                <a href="#sessao-calendario" class="offcanvas-menu-link"><i class="bi bi-calendar3 text-primary me-2"></i> Meu Calendário</a>
-            </div>
-            <div class="p-3 border-top mt-auto bg-light">
-                <a href="index.php?page=logout" class="btn btn-outline-danger w-100 fw-bold"><i class="bi bi-box-arrow-right me-2"></i> Sair</a>
-            </div>
-        </div>
-    </div>
-
-    <div class="container pt-3 pb-5">
-        <?= $mensagem ?>
-        <div id="sessao-calendario" class="content-section">
-            <?php include APP_PATH . '/Views/professor/_calendario.php'; ?>
-        </div>
-        <div id="sessao-dashboard" class="content-section">
-            <?php include APP_PATH . '/Views/professor/_dashboard.php'; ?>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="assets/js/app.js"></script>
-    <script>
-
-    <div class="offcanvas offcanvas-end" tabindex="-1" id="sidebarMenu">
         <div class="offcanvas-header bg-uniceplac text-white py-3 border-0">
             <h6 class="offcanvas-title fw-bold"><i class="bi bi-grid-1x2-fill me-2"></i>Menu Docente</h6>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
@@ -94,27 +68,27 @@
 
         <!-- Seção Calendário -->
         <div id="sessao-calendario" class="content-section">
-            <?php include APP_PATH . '/Views/professor/_calendario.php'; ?>
+            <?php include VIEWS_PATH . '/professor/_calendario.php'; ?>
         </div>
 
         <!-- Seção Dashboard (Próximas Aulas) -->
         <div id="sessao-dashboard" class="content-section">
-            <?php include APP_PATH . '/Views/professor/_dashboard.php'; ?>
+            <?php include VIEWS_PATH . '/professor/_dashboard.php'; ?>
         </div>
 
         <!-- Seção Ensalamento -->
         <div id="sessao-ensalamento" class="content-section">
-            <?php include APP_PATH . '/Views/professor/_ensalamento.php'; ?>
+            <?php include VIEWS_PATH . '/professor/_ensalamento.php'; ?>
         </div>
 
         <!-- Seção Solicitar -->
         <div id="sessao-solicitar" class="content-section">
-            <?php include APP_PATH . '/Views/professor/_solicitar.php'; ?>
+            <?php include VIEWS_PATH . '/professor/_solicitar.php'; ?>
         </div>
 
         <!-- Seção Histórico -->
         <div id="sessao-historico" class="content-section">
-            <?php include APP_PATH . '/Views/professor/_historico.php'; ?>
+            <?php include VIEWS_PATH . '/professor/_historico.php'; ?>
         </div>
     </div>
 

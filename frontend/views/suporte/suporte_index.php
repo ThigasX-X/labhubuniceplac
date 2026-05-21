@@ -65,22 +65,22 @@
 
         <!-- Mapa Diário -->
         <div id="sessao-mapa-diario" class="content-section">
-            <?php include APP_PATH . '/Views/suporte/_mapa_diario.php'; ?>
+            <?php include VIEWS_PATH . '/suporte/_mapa_diario.php'; ?>
         </div>
 
         <!-- Labs -->
         <div id="sessao-labs" class="content-section">
-            <?php include APP_PATH . '/Views/suporte/_labs.php'; ?>
+            <?php include VIEWS_PATH . '/suporte/_labs.php'; ?>
         </div>
 
         <!-- Histórico de Chaves -->
         <div id="sessao-historico-chaves" class="content-section">
-            <?php include APP_PATH . '/Views/suporte/_historico_chaves.php'; ?>
+            <?php include VIEWS_PATH . '/suporte/_historico_chaves.php'; ?>
         </div>
 
         <!-- Histórico de Chamados -->
         <div id="sessao-historico-chamados" class="content-section">
-            <?php include APP_PATH . '/Views/suporte/_historico_chamados.php'; ?>
+            <?php include VIEWS_PATH . '/suporte/_historico_chamados.php'; ?>
         </div>
     </div>
 
