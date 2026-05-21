@@ -122,9 +122,20 @@ class ProfessorController extends BaseController
         $meuEnsalamento = [];
         try {
             $stmt = $this->pdo->prepare(
-                "SELECT e.*, d.nome as disciplina FROM ensalamento e
-                 JOIN disciplinas d ON e.id_disciplina = d.id WHERE e.id_professor = ?
-                 ORDER BY FIELD(e.turno,'Matutino','Vespertino','Noturno'), e.curso"
+                "SELECT e.id, e.categoria, e.turno,
+                        d.nome  AS disciplina,
+                        c.nome  AS curso,
+                        s.nome  AS sala,
+                        a.nome  AS andar,
+                        b.nome  AS bloco
+                 FROM ensalamento e
+                 JOIN disciplinas d ON e.id_disciplina = d.id
+                 JOIN cursos      c ON e.id_curso      = c.id
+                 JOIN salas       s ON e.id_sala       = s.id
+                 JOIN andares     a ON s.id_andar      = a.id
+                 JOIN blocos      b ON a.id_bloco      = b.id
+                 WHERE e.id_professor = ?
+                 ORDER BY FIELD(e.turno,'Matutino','Vespertino','Noturno'), c.nome"
             );
             $stmt->execute([$idProfessor]);
             $meuEnsalamento = $stmt->fetchAll();
@@ -142,11 +153,17 @@ class ProfessorController extends BaseController
         if ($idQuadroAtivo) {
             // Aulas práticas (laboratórios) da grade fixa
             $stmt = $this->pdo->prepare(
-                "SELECT qa.id, l.nome as laboratorio, l.localizacao as lab_local, l.andar as lab_andar,
-                        d.nome as disciplina, qa.turno, qa.horario as periodo, qa.dia_semana, qa.bloco, qa.andar, qa.sala
+                "SELECT qa.id,
+                        l.nome AS laboratorio, l.localizacao AS lab_local, l.andar AS lab_andar,
+                        d.nome AS disciplina,
+                        qa.turno, qa.horario AS periodo, qa.dia_semana,
+                        b.nome AS bloco, a.nome AS andar, s.nome AS sala
                  FROM quadro_aulas qa
                  JOIN laboratorios l ON qa.id_laboratorio = l.id
-                 JOIN disciplinas d  ON qa.id_disciplina  = d.id
+                 JOIN disciplinas  d ON qa.id_disciplina  = d.id
+                 LEFT JOIN salas   s ON qa.id_sala        = s.id
+                 LEFT JOIN andares a ON s.id_andar        = a.id
+                 LEFT JOIN blocos  b ON a.id_bloco        = b.id
                  WHERE qa.id_quadro = ? AND qa.id_professor = ? AND qa.id_laboratorio IS NOT NULL"
             );
             $stmt->execute([$idQuadroAtivo, $idProfessor]);
@@ -160,9 +177,19 @@ class ProfessorController extends BaseController
 
             // Ensalamentos da grade fixa
             $stmt = $this->pdo->prepare(
-                "SELECT qa.*, d.nome as disciplina FROM quadro_aulas qa
+                "SELECT qa.id, qa.turno, qa.modalidade, qa.dia_semana,
+                        d.nome AS disciplina,
+                        c.nome AS curso,
+                        s.nome AS sala,
+                        a.nome AS andar,
+                        b.nome AS bloco
+                 FROM quadro_aulas qa
                  JOIN disciplinas d ON qa.id_disciplina = d.id
-                 WHERE qa.id_quadro = ? AND qa.id_professor = ? AND qa.sala IS NOT NULL AND TRIM(qa.sala) != ''"
+                 JOIN cursos      c ON qa.id_curso      = c.id
+                 JOIN salas       s ON qa.id_sala       = s.id
+                 JOIN andares     a ON s.id_andar       = a.id
+                 JOIN blocos      b ON a.id_bloco       = b.id
+                 WHERE qa.id_quadro = ? AND qa.id_professor = ? AND qa.id_sala IS NOT NULL"
             );
             $stmt->execute([$idQuadroAtivo, $idProfessor]);
             foreach ($stmt->fetchAll() as $sf) {
@@ -209,10 +236,18 @@ class ProfessorController extends BaseController
             $endRecur   = $mesAtual <= 6 ? "{$anoAtual}-07-31" : "{$anoAtual}-12-31";
 
             $stmt = $this->pdo->prepare(
-                "SELECT qa.*, d.nome as disc_nome, l.nome as lab_nome, l.localizacao as lab_local, l.andar as lab_andar
+                "SELECT qa.*,
+                        d.nome  AS disc_nome,
+                        l.nome  AS lab_nome, l.localizacao AS lab_local, l.andar AS lab_andar,
+                        s.nome  AS sala,
+                        a.nome  AS andar,
+                        b.nome  AS bloco
                  FROM quadro_aulas qa
-                 JOIN disciplinas d   ON qa.id_disciplina  = d.id
+                 JOIN disciplinas d ON qa.id_disciplina = d.id
                  LEFT JOIN laboratorios l ON qa.id_laboratorio = l.id
+                 LEFT JOIN salas       s ON qa.id_sala        = s.id
+                 LEFT JOIN andares     a ON s.id_andar        = a.id
+                 LEFT JOIN blocos      b ON a.id_bloco        = b.id
                  WHERE qa.id_quadro = ? AND qa.id_professor = ?"
             );
             $stmt->execute([$idQuadroAtivo, $idProfessor]);
