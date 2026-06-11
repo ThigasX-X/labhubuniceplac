@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/QuadroHorarioDAO.php';
+require_once __DIR__ . '/../DAOs/QuadroHorarioDAO.php';
 
 class QuadroHorarioDAOImpl implements QuadroHorarioDAO
 {
