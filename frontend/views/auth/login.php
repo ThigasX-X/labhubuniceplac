@@ -46,6 +46,7 @@
                 <div class="divider">OU</div>
 
                 <form action="/index.php?page=login" method="POST">
+                    <?= Csrf::field() ?>
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-uniceplac">E-mail</label>
                         <input type="email" class="form-control" name="email" required placeholder="exemplo@uniceplac.edu.br">

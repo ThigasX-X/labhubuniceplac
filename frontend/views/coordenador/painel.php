@@ -6,6 +6,7 @@ $perfil      = $_SESSION['perfil']   ?? 'coordenador';
 <html lang="pt-BR" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
+    <meta name="csrf-token" content="<?= Csrf::token() ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Coordenador | UNICEPLAC</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
@@ -234,8 +235,8 @@ document.addEventListener('DOMContentLoaded', function () {
             const novoDia = col.dataset.dia;
             fetch('index.php?page=coordenador', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `action=mover_aula&id_aula=${idAula}&novo_dia=${encodeURIComponent(novoDia)}`
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': CSRF_TOKEN },
+                body: `action=mover_aula&id_aula=${idAula}&novo_dia=${encodeURIComponent(novoDia)}&_csrf=${CSRF_TOKEN}`
             }).then(r => r.json()).then(d => { if (d.success) location.reload(); else alert(d.error || 'Erro ao mover.'); });
         });
     });

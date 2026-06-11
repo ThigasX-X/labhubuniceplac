@@ -2,6 +2,18 @@
    LabHub UNICEPLAC — Global JavaScript
    ===================================================================== */
 
+/* CSRF: token vem da <meta name="csrf-token">; injetado em todo form POST */
+const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || '';
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('form').forEach(f => {
+        if ((f.method || '').toLowerCase() === 'post' && !f.querySelector('input[name="_csrf"]')) {
+            const i = document.createElement('input');
+            i.type = 'hidden'; i.name = '_csrf'; i.value = CSRF_TOKEN;
+            f.appendChild(i);
+        }
+    });
+});
+
 function autoOcultarMensagens() {
     document.querySelectorAll('.alert-autohide').forEach(el => {
         setTimeout(() => {

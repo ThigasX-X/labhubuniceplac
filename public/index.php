@@ -11,7 +11,19 @@ require BACKEND_PATH . '/config/app.php';
 require BACKEND_PATH . '/config/database.php';
 
 if (session_status() === PHP_SESSION_NONE) {
+    session_set_cookie_params([
+        'httponly' => true,                          // JS não lê o cookie (mitiga roubo via XSS)
+        'samesite' => 'Lax',                         // bloqueia envio cross-site (mitiga CSRF)
+        'secure'   => !empty($_SERVER['HTTPS']),     // só HTTPS quando disponível
+    ]);
     session_start();
+}
+
+require_once BACKEND_PATH . '/helpers/Csrf.php';
+
+// Proteção CSRF: toda requisição POST precisa de token válido
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    Csrf::check();
 }
 
 $page = trim($_GET['page'] ?? 'login', '/');
