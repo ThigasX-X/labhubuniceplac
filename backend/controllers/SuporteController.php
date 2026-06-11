@@ -3,7 +3,7 @@
     require_once BACKEND_PATH . '/models/ControleChave.php';
     require_once BACKEND_PATH . '/models/ChamadoSuporte.php';
     require_once BACKEND_PATH . '/models/Laboratorio.php';
-    require_once BACKEND_PATH . '/models/Usuario.php';
+    require_once BACKEND_PATH . '/DAOImpl/UsuarioDAOImpl.php';
     require_once BACKEND_PATH . '/helpers/Auth.php';
     require_once BACKEND_PATH . '/helpers/Upload.php';
 
@@ -11,10 +11,7 @@
     {
         public function index(): void
         {
-            if (!isset($_SESSION['usuario_id']) ||
-                !in_array($_SESSION['perfil'], ['suporte', 'coordenador'])) {
-                $this->redirect('login');
-            }
+            $this->requireAuth(['suporte', 'coordenador']);
 
             $idUsuario   = Auth::id();
             $mensagem    = '';
@@ -48,7 +45,7 @@
             if (isset($_FILES['nova_foto']) && $_FILES['nova_foto']['error'] === UPLOAD_ERR_OK) {
                 $caminho = Upload::foto($_FILES['nova_foto'], $idUsuario, $_SESSION['foto_perfil'] ?? null);
                 if ($caminho) {
-                    (new Usuario($this->pdo))->updateFoto($idUsuario, $caminho);
+                    (new UsuarioDAOImpl($this->pdo))->updateFoto($idUsuario, $caminho);
                     $_SESSION['foto_perfil'] = $caminho;
                     $mensagem = '<div class="alert alert-success alert-autohide mb-4">Foto atualizada!</div>';
                 }
