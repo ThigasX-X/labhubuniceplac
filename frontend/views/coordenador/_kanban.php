@@ -1,6 +1,6 @@
 <?php
 $diasSemana = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-$turnosCores = ['Manhã' => 'text-warning', 'Tarde' => 'text-primary', 'Noite' => 'text-info'];
+$turnosCores = ['Matutino' => 'text-warning', 'Vespertino' => 'text-primary', 'Noturno' => 'text-info'];
 ?>
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
     <div>
@@ -8,17 +8,16 @@ $turnosCores = ['Manhã' => 'text-warning', 'Tarde' => 'text-primary', 'Noite' =
         <p class="text-muted small mb-0">Arraste os cards para reorganizar o dia de uma aula.</p>
     </div>
     <!-- Seletor de Quadro -->
-    <form method="GET" action="/index.php" class="d-flex gap-2 align-items-center">
-        <input type="hidden" name="page" value="coordenador">
-        <input type="hidden" name="#" value="kanban">
-        <select name="q_id" class="form-select form-select-sm rounded-pill" onchange="this.form.submit()" style="min-width:200px;">
+    <div class="d-flex gap-2 align-items-center">
+        <select class="form-select form-select-sm rounded-pill" style="min-width:200px;"
+                onchange="location.href='/index.php?page=coordenador&q_id=' + this.value + '#kanban'">
             <?php foreach ($listaQuadros as $q): ?>
                 <option value="<?= $q['id'] ?>" <?= $q['id'] == $quadroSelecionado ? 'selected' : '' ?>>
                     <?= htmlspecialchars($q['nome']) ?> — <?= htmlspecialchars($q['periodo_letivo']) ?>
                 </option>
             <?php endforeach; ?>
         </select>
-    </form>
+    </div>
 </div>
 
 <?php if (!$quadroSelecionado || empty($todasAulas)): ?>

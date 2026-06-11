@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/ChamadoSuporteDAO.php';
+require_once __DIR__ . '/../DAOs/ChamadoSuporteDAO.php';
 
 class ChamadoSuporteDAOImpl implements ChamadoSuporteDAO
 {

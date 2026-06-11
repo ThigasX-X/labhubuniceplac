@@ -22,10 +22,10 @@ class ProfessorController extends BaseController
 
         // --- UPLOAD DE FOTO ---
         if (isset($_FILES['nova_foto']) && $_FILES['nova_foto']['error'] === UPLOAD_ERR_OK) {
-            require_once BACKEND_PATH . '/models/Usuario.php';
+            require_once BACKEND_PATH . '/DAOImpl/UsuarioDAOImpl.php';
             $caminho = Upload::foto($_FILES['nova_foto'], $idProfessor, $_SESSION['foto_perfil'] ?? null);
             if ($caminho) {
-                (new \Usuario($this->pdo))->updateFoto($idProfessor, $caminho);
+                (new UsuarioDAOImpl($this->pdo))->updateFoto($idProfessor, $caminho);
                 $_SESSION['foto_perfil'] = $caminho;
                 $mensagem = '<div class="alert alert-success alert-autohide mb-4">Foto atualizada!</div>';
             }
@@ -33,25 +33,32 @@ class ProfessorController extends BaseController
 
         // --- RETIRADA DE CHAVE ---
         if ($this->isPost() && isset($_POST['registrar_retirada'])) {
+            $abaAtiva      = 'sessao-dashboard';
+            $idAgendamento = (int) ($_POST['id_agendamento'] ?? 0);
+            // Valida que a aula pertence ao professor logado (lab e turno vêm do banco, não do POST)
+            $aulaChave = $this->buscarAulaParaChave($idAgendamento, $idProfessor);
+
             $horaAtual  = date('H:i');
-            $turnoAula  = $_POST['turno_aula'] ?? '';
-            $podeRetirar = match (true) {
-                in_array($turnoAula, ['Matutino', 'Manhã'])    => $horaAtual >= '07:00' && $horaAtual <= '12:30',
-                in_array($turnoAula, ['Vespertino', 'Tarde'])  => $horaAtual >= '13:00' && $horaAtual <= '18:30',
-                in_array($turnoAula, ['Noturno', 'Noite'])     => $horaAtual >= '18:00' && $horaAtual <= '23:00',
-                default => false,
+            $podeRetirar = $aulaChave && match ($aulaChave['turno']) {
+                'Matutino'   => $horaAtual >= '07:00' && $horaAtual <= '12:30',
+                'Vespertino' => $horaAtual >= '13:00' && $horaAtual <= '18:30',
+                'Noturno'    => $horaAtual >= '18:00' && $horaAtual <= '23:00',
+                default      => false,
             };
 
-            if (!$podeRetirar) {
+            if (!$aulaChave) {
+                $mensagem = '<div class="alert alert-danger alert-autohide mb-4">'
+                    . '<i class="bi bi-shield-x me-2"></i>Reserva não encontrada ou não pertence a você.</div>';
+            } elseif (!$podeRetirar) {
                 $mensagem = '<div class="alert alert-warning alert-autohide rounded-0 border-start border-4 border-warning mb-4">'
                     . '<i class="bi bi-clock-fill me-2"></i><strong>Acesso Negado:</strong> Retirada não permitida neste horário ('
                     . $horaAtual . ').</div>';
             } else {
                 try {
                     $chaveModel->registrarRetirada(
-                        (int) $_POST['id_agendamento'],
+                        $idAgendamento,
                         Auth::nome(),
-                        $_POST['laboratorio_chave'],
+                        $aulaChave['laboratorio'],
                         $_POST['celular'],
                         $_POST['hora_devolucao_prevista'],
                         $_POST['funcionario_entrega']
@@ -66,6 +73,7 @@ class ProfessorController extends BaseController
 
         // --- SOS ---
         if ($this->isPost() && isset($_POST['acao_sos'])) {
+            $abaAtiva = 'sessao-dashboard';
             try {
                 $chamadoModel->abrir($idProfessor, Auth::nome(), $_POST['laboratorio_sos'], trim($_POST['mensagem_sos']));
                 $mensagem = '<div class="alert alert-success alert-autohide rounded-0 border-start border-4 border-success mb-4">'
@@ -304,22 +312,26 @@ class ProfessorController extends BaseController
             if ($al['status'] === 'pendente') {
                 $qtdPendentes++;
             } elseif ($al['status'] === 'aprovado' && $al['data_reserva'] >= $hoje) {
-                $t = trim($al['turno']);
-                if (in_array($t, ['Matutino', 'Manhã']))     $proximasMatutino[]  = $al;
-                elseif (in_array($t, ['Vespertino', 'Tarde'])) $proximasVespertino[] = $al;
-                elseif (in_array($t, ['Noturno', 'Noite']))   $proximasNoturno[]   = $al;
+                match (trim($al['turno'])) {
+                    'Matutino'   => $proximasMatutino[]   = $al,
+                    'Vespertino' => $proximasVespertino[] = $al,
+                    'Noturno'    => $proximasNoturno[]    = $al,
+                    default      => null,
+                };
             }
         }
-        usort($proximasMatutino,  fn($a, $b) => strtotime($a['data_reserva']) - strtotime($b['data_reserva']));
+        usort($proximasMatutino,   fn($a, $b) => strtotime($a['data_reserva']) - strtotime($b['data_reserva']));
         usort($proximasVespertino, fn($a, $b) => strtotime($a['data_reserva']) - strtotime($b['data_reserva']));
-        usort($proximasNoturno,   fn($a, $b) => strtotime($a['data_reserva']) - strtotime($b['data_reserva']));
+        usort($proximasNoturno,    fn($a, $b) => strtotime($a['data_reserva']) - strtotime($b['data_reserva']));
 
         $ensalamentoMatutino = $ensalamentoVespertino = $ensalamentoNoturno = [];
         foreach ($meuEnsalamento as $e) {
-            $t = trim($e['turno']);
-            if (in_array($t, ['Matutino', 'Manhã']))      $ensalamentoMatutino[]  = $e;
-            elseif (in_array($t, ['Vespertino', 'Tarde'])) $ensalamentoVespertino[] = $e;
-            elseif (in_array($t, ['Noturno', 'Noite']))    $ensalamentoNoturno[]   = $e;
+            match (trim($e['turno'])) {
+                'Matutino'   => $ensalamentoMatutino[]   = $e,
+                'Vespertino' => $ensalamentoVespertino[] = $e,
+                'Noturno'    => $ensalamentoNoturno[]    = $e,
+                default      => null,
+            };
         }
 
         $fotoAtual = Auth::foto();
@@ -331,5 +343,32 @@ class ProfessorController extends BaseController
             'ensalamentoMatutino', 'ensalamentoVespertino', 'ensalamentoNoturno',
             'qtdPendentes', 'eventosJson', 'hoje', 'fotoAtual'
         ));
+    }
+
+    /**
+     * Busca a aula (avulsa ou da grade fixa, ids >= 1000000) garantindo
+     * que pertence ao professor logado. Retorna ['laboratorio', 'turno'] ou null.
+     */
+    private function buscarAulaParaChave(int $idAgendamento, int $idProfessor): ?array
+    {
+        if ($idAgendamento >= 1000000) {
+            $stmt = $this->pdo->prepare(
+                "SELECT l.nome AS laboratorio, qa.turno
+                 FROM quadro_aulas qa
+                 JOIN laboratorios l ON qa.id_laboratorio = l.id
+                 WHERE qa.id = ? AND qa.id_professor = ?"
+            );
+            $stmt->execute([$idAgendamento - 1000000, $idProfessor]);
+        } else {
+            $stmt = $this->pdo->prepare(
+                "SELECT l.nome AS laboratorio, a.turno
+                 FROM agendamentos a
+                 JOIN laboratorios l ON a.id_laboratorio = l.id
+                 WHERE a.id = ? AND a.id_professor = ? AND a.status = 'aprovado'"
+            );
+            $stmt->execute([$idAgendamento, $idProfessor]);
+        }
+
+        return $stmt->fetch() ?: null;
     }
 }

@@ -6,7 +6,7 @@ function renderizarCardEnsalamento($e, $badgeCor, $bordaClasse) { ?>
                 <h5 class="fw-bold text-dark text-truncate mb-0" style="max-width:80%;" title="<?= htmlspecialchars($e['disciplina']) ?>"><?= htmlspecialchars($e['disciplina']) ?></h5>
                 <span class="badge <?= $badgeCor ?>"><?= $e['turno'] ?></span>
             </div>
-            <p class="text-muted small mb-4"><i class="bi bi-mortarboard me-1"></i><?= htmlspecialchars($e['curso']) ?> | <?= htmlspecialchars($e['categoria']) ?></p>
+            <p class="text-muted small mb-4"><i class="bi bi-mortarboard me-1"></i><?= htmlspecialchars($e['curso'] ?? '') ?> | <?= htmlspecialchars($e['categoria'] ?? '-') ?></p>
             <div class="d-flex align-items-center bg-light p-3 rounded border">
                 <div class="flex-fill text-center"><span class="d-block small text-secondary fw-bold text-uppercase mb-1">Bloco</span><span class="fs-5 fw-bold text-dark"><?= htmlspecialchars($e['bloco'] ?? '-') ?></span></div>
                 <div class="flex-fill text-center border-start"><span class="d-block small text-secondary fw-bold text-uppercase mb-1">Andar</span><span class="fs-5 fw-bold text-dark"><?= htmlspecialchars($e['andar'] ?? '-') ?></span></div>

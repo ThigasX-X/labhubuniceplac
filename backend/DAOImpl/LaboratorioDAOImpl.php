@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/LaboratorioDAO.php';
+require_once __DIR__ . '/../DAOs/LaboratorioDAO.php';
 
 class LaboratorioDAOImpl implements LaboratorioDAO
 {

@@ -77,14 +77,31 @@ class HorarioHelper
             $stmt->execute([$idQuadro, $idLab, $diaSemana, $turno]);
             $fixos = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
+            $periodoNorm = self::normalizaHorario($periodo);
             foreach ($fixos as $hFixo) {
-                if ($periodo === '1º e 2º Horários' || $hFixo === '1º e 2º Horários' || $periodo === $hFixo) {
+                $fixoNorm = self::normalizaHorario($hFixo);
+                if ($periodoNorm === 'ambos' || $fixoNorm === 'ambos' || $periodoNorm === $fixoNorm) {
                     return "A Grade Fixa já ocupa este laboratório toda {$diaSemana} ({$turno}).";
                 }
             }
         }
 
         return false;
+    }
+
+    private static function normalizaHorario(string $valor): string
+    {
+        $v = trim($valor);
+        return match ($v) {
+            '1º', '1º Horário'             => '1',
+            '2º', '2º Horário'             => '2',
+            '3º'                            => '3',
+            '4º'                            => '4',
+            '5º'                            => '5',
+            '6º'                            => '6',
+            '1º e 2º Horários'              => 'ambos',
+            default                         => $v,
+        };
     }
 
     public static function feriados2026(): array

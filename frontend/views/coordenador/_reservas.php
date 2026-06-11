@@ -110,6 +110,8 @@
                 <form method="POST" action="/index.php?page=coordenador" id="formEditarReserva">
                     <input type="hidden" name="editar_agendamento_coord" value="1">
                     <input type="hidden" name="id_agendamento" id="editId">
+                    <input type="hidden" name="id_professor" id="editProf">
+                    <input type="hidden" name="id_disciplina" id="editDisc">
                     <div class="mb-3">
                         <label class="form-label fw-semibold small">Data</label>
                         <input type="date" name="data_reserva" id="editData" class="form-control rounded-3" required>
@@ -117,13 +119,13 @@
                     <div class="mb-3">
                         <label class="form-label fw-semibold small">Turno</label>
                         <select name="turno" id="editTurno" class="form-select rounded-3" required>
-                            <option>Manhã</option><option>Tarde</option><option>Noite</option>
+                            <option>Matutino</option><option>Vespertino</option><option>Noturno</option>
                         </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold small">Período</label>
                         <select name="periodo" id="editPeriodo" class="form-select rounded-3" required>
-                            <option>1º</option><option>2º</option><option>3º</option><option>4º</option><option>5º</option><option>6º</option>
+                            <option>1º e 2º Horários</option><option>1º Horário</option><option>2º Horário</option>
                         </select>
                     </div>
                     <div class="mb-3">
@@ -144,6 +146,8 @@
 <script>
 function abrirModalEditar(ag) {
     document.getElementById('editId').value      = ag.id;
+    document.getElementById('editProf').value    = ag.id_professor;
+    document.getElementById('editDisc').value    = ag.id_disciplina;
     document.getElementById('editData').value    = ag.data_reserva;
     document.getElementById('editTurno').value   = ag.turno;
     document.getElementById('editPeriodo').value = ag.periodo;

@@ -1,14 +1,18 @@
 <?php
-$host = '127.0.0.1';
-$usuario = 'root';
-$senha = '';
+require_once dirname(__DIR__) . '/config/app.php';
+
+$host    = getenv('DB_HOST') ?: $_ENV['DB_HOST'] ?? '127.0.0.1';
+$port    = getenv('DB_PORT') ?: $_ENV['DB_PORT'] ?? '3306';
+$dbname  = getenv('DB_NAME') ?: $_ENV['DB_NAME'] ?? 'sistema_labs';
+$usuario = getenv('DB_USER') ?: $_ENV['DB_USER'] ?? 'root';
+$senha   = getenv('DB_PASS') ?: $_ENV['DB_PASS'] ?? '';
 
 try {
-    $pdo = new PDO("mysql:host=$host;charset=utf8mb4", $usuario, $senha);
+    $pdo = new PDO("mysql:host=$host;port=$port;charset=utf8mb4", $usuario, $senha);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    $pdo->exec("CREATE DATABASE IF NOT EXISTS sistema_labs CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-    $pdo->exec("USE sistema_labs");
+    $pdo->exec("CREATE DATABASE IF NOT EXISTS `$dbname` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+    $pdo->exec("USE `$dbname`");
 
     $pdo->exec("SET FOREIGN_KEY_CHECKS = 0");
 
@@ -127,7 +131,8 @@ try {
         funcionario_recebimento VARCHAR(150) DEFAULT NULL,
         hora_devolucao_real TIME DEFAULT NULL,
         status ENUM('em_uso','devolvido') NOT NULL DEFAULT 'em_uso',
-        CONSTRAINT fk_chave_agend FOREIGN KEY (id_agendamento) REFERENCES agendamentos(id) ON DELETE CASCADE,
+        -- Sem FK: id_agendamento também guarda ids sintéticos (+1000000) de aulas da grade fixa
+        INDEX idx_chave_agend (id_agendamento),
         INDEX idx_chave_status (status)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 

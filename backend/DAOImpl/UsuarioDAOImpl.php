@@ -32,4 +32,34 @@ class UsuarioDAOImpl implements UsuarioDAO
     {
         return $this->pdo->query("SELECT id, nome FROM usuarios WHERE perfil = 'professor' ORDER BY nome")->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function updateFoto(int $id, string $caminho): void
+    {
+        $this->pdo->prepare("UPDATE usuarios SET foto_perfil = ? WHERE id = ?")
+            ->execute([$caminho, $id]);
+    }
+
+    public function upsertGoogle(string $email, string $nome, string $foto): array
+    {
+        $existing = $this->findByEmail($email);
+
+        if ($existing) {
+            $this->pdo->prepare("UPDATE usuarios SET foto_perfil = ? WHERE email = ?")
+                ->execute([$foto, $email]);
+            return $existing;
+        }
+
+        $stmt = $this->pdo->prepare(
+            "INSERT INTO usuarios (nome, email, senha, foto_perfil, perfil, email_verificado)
+             VALUES (?, ?, '', ?, 'professor', 1)"
+        );
+        $stmt->execute([$nome, $email, $foto]);
+
+        return [
+            'id'          => (int) $this->pdo->lastInsertId(),
+            'nome'        => $nome,
+            'perfil'      => 'professor',
+            'foto_perfil' => $foto,
+        ];
+    }
 }

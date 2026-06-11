@@ -5,6 +5,7 @@ class ApiController extends BaseController
 {
     public function checkSos(): void
     {
+        $this->guardPerfil(['suporte', 'coordenador']);
         $model = new ChamadoSuporte($this->pdo);
         $this->json(['qtd' => $model->countPendentes()]);
     }
@@ -56,6 +57,7 @@ class ApiController extends BaseController
 
     public function andaresPorBloco(): void
     {
+        $this->guardCoordenador();
         $idBloco = (int) ($_GET['id_bloco'] ?? 0);
         if ($idBloco <= 0) { $this->json([]); }
         $stmt = $this->pdo->prepare("SELECT id, nome FROM andares WHERE id_bloco = ? ORDER BY nome");
@@ -65,10 +67,24 @@ class ApiController extends BaseController
 
     public function salasPorAndar(): void
     {
+        $this->guardCoordenador();
         $idAndar = (int) ($_GET['id_andar'] ?? 0);
         if ($idAndar <= 0) { $this->json([]); }
         $stmt = $this->pdo->prepare("SELECT id, nome FROM salas WHERE id_andar = ? ORDER BY nome");
         $stmt->execute([$idAndar]);
         $this->json($stmt->fetchAll());
+    }
+
+    private function guardCoordenador(): void
+    {
+        $this->guardPerfil(['coordenador']);
+    }
+
+    private function guardPerfil(array $perfis): void
+    {
+        if (!isset($_SESSION['usuario_id']) || !in_array($_SESSION['perfil'], $perfis, true)) {
+            http_response_code(403);
+            $this->json([]);
+        }
     }
 }

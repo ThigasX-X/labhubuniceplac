@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/AgendamentoDAO.php';
+require_once __DIR__ . '/../DAOs/AgendamentoDAO.php';
 
 class AgendamentoDAOImpl implements AgendamentoDAO
 {

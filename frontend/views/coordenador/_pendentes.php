@@ -104,15 +104,14 @@
                 <label class="form-label fw-semibold small">Turno</label>
                 <select name="turno" class="form-select rounded-3" required>
                     <option value="">Selecione...</option>
-                    <option>Manhã</option><option>Tarde</option><option>Noite</option>
+                    <option>Matutino</option><option>Vespertino</option><option>Noturno</option>
                 </select>
             </div>
             <div class="col-md-4">
                 <label class="form-label fw-semibold small">Período</label>
                 <select name="periodo" class="form-select rounded-3" required>
                     <option value="">Selecione...</option>
-                    <option>1º</option><option>2º</option><option>3º</option><option>4º</option>
-                    <option>5º</option><option>6º</option>
+                    <option>1º e 2º Horários</option><option>1º Horário</option><option>2º Horário</option>
                 </select>
             </div>
             <div class="col-12">

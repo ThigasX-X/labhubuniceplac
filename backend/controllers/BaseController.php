@@ -41,15 +41,18 @@ abstract class BaseController
         exit;
     }
 
-    protected function requireAuth(?string $perfil = null): void
+    protected function requireAuth(string|array|null $perfil = null): void
     {
         if (!isset($_SESSION['usuario_id'])) {
             $this->redirect('login');
         }
 
-        if ($perfil !== null && $_SESSION['perfil'] !== $perfil) {
-            // Se o perfil logado for diferente do exigido, redireciona
-            $this->redirect('login');
+        $permitidos = $perfil === null ? null : (array) $perfil;
+
+        if ($permitidos !== null && !in_array($_SESSION['perfil'], $permitidos, true)) {
+            require_once BACKEND_PATH . '/helpers/Auth.php';
+            header('Location: ' . Auth::destinoAposLogin($_SESSION['perfil']));
+            exit;
         }
     }
 

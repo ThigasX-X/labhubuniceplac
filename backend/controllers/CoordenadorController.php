@@ -2,7 +2,7 @@
 require_once BACKEND_PATH . '/models/Agendamento.php';
 require_once BACKEND_PATH . '/models/Laboratorio.php';
 require_once BACKEND_PATH . '/models/Disciplina.php';
-require_once BACKEND_PATH . '/models/Usuario.php';
+require_once BACKEND_PATH . '/DAOImpl/UsuarioDAOImpl.php';
 require_once BACKEND_PATH . '/DAOImpl/QuadroHorarioDAOImpl.php';
 require_once BACKEND_PATH . '/models/ChamadoSuporte.php';
 require_once BACKEND_PATH . '/helpers/Auth.php';
@@ -32,7 +32,7 @@ class CoordenadorController extends BaseController
         $agendamentoModel = new Agendamento($this->pdo);
         $labModel         = new Laboratorio($this->pdo);
         $discModel        = new Disciplina($this->pdo);
-        $usuarioModel     = new Usuario($this->pdo);
+        $usuarioModel     = new UsuarioDAOImpl($this->pdo);
         $quadroModel      = new QuadroHorarioDAOImpl($this->pdo);
 
         // --- UPLOAD DE FOTO ---
@@ -163,7 +163,11 @@ class CoordenadorController extends BaseController
         )->fetchAll();
 
         $listaQuadros     = $quadroModel->all();
-        $quadroSelecionado = $_GET['q_id'] ?? (count($listaQuadros) > 0 ? $listaQuadros[0]['id'] : null);
+        // Preserva o quadro que estava sendo editado após um POST (ex.: nova aula),
+        // senão a tela voltaria para o quadro mais recente da lista.
+        $quadroSelecionado = $_GET['q_id']
+            ?? ($_POST['id_quadro_ativo'] ?? null)
+            ?? (count($listaQuadros) > 0 ? $listaQuadros[0]['id'] : null);
 
         $todasAulas   = [];
         $aulasDiaSemana = ['Segunda' => [], 'Terça' => [], 'Quarta' => [], 'Quinta' => [], 'Sexta' => [], 'Sábado' => []];
@@ -238,9 +242,10 @@ class CoordenadorController extends BaseController
 
         $eventosJson = json_encode($eventosCalendario);
         $fotoAtual   = Auth::foto();
+        $abaAtiva    = $this->definirAbaAtiva();
 
         $this->render('coordenador/painel', compact(
-            'mensagem', 'qtdPendentes', 'fotoAtual',
+            'mensagem', 'qtdPendentes', 'fotoAtual', 'abaAtiva',
             'reservasPendentes', 'agendamentosAprovados', 'historicoCompleto',
             'professores', 'laboratoriosCadastrados', 'disciplinas',
             'cursosCadastrados', 'semestres', 'blocosCadastrados', 'andaresCadastrados', 'salasCadastradas',
@@ -259,6 +264,40 @@ class CoordenadorController extends BaseController
     // =========================================================================
     // Métodos privados de suporte
     // =========================================================================
+
+    /**
+     * Mantém o coordenador na mesma seção após um POST (o form recarrega a
+     * página inteira e, sem isto, cairia sempre no calendário).
+     */
+    private function definirAbaAtiva(): string
+    {
+        if (!$this->isPost()) {
+            return 'calendario';
+        }
+
+        $secoes = [
+            'quadro'       => ['criar_quadro', 'duplicar_quadro', 'excluir_quadro', 'salvar_aula_quadro', 'editar_aula_quadro', 'excluir_aula_quadro'],
+            'ensalamento'  => ['salvar_ensalamento', 'editar_ensalamento', 'excluir_ensalamento'],
+            'reservas'     => ['editar_agendamento_coord', 'cancelar_agendamento'],
+            'solicitacoes' => ['acao_reserva', 'agendar_lab_coord'],
+        ];
+
+        foreach ($secoes as $aba => $campos) {
+            foreach ($campos as $campo) {
+                if (isset($_POST[$campo])) {
+                    return $aba;
+                }
+            }
+        }
+
+        foreach (array_keys($_POST) as $campo) {
+            if (preg_match('/^(salvar|editar|excluir)_(lab|disciplina|curso|semestre|bloco|andar|sala)$/', $campo)) {
+                return 'cadastros';
+            }
+        }
+
+        return 'calendario';
+    }
 
     private function moverAula(): array
     {
@@ -320,10 +359,13 @@ class CoordenadorController extends BaseController
             return '<div class="alert alert-warning alert-autohide mb-4"><strong>Bloqueado:</strong> ' . $conflito . '</div>';
         }
         try {
-            $model->criarReserva($idLab, (int) $_POST['id_professor'], (int) $_POST['id_disciplina'], $data, $turno, $periodo);
+            $model->criarReserva($idLab, (int) $_POST['id_professor'], (int) $_POST['id_disciplina'], $turno, $periodo, $data);
             return '<div class="alert alert-success alert-autohide mb-4">Agendamento criado!</div>';
-        } catch (PDOException) {
-            return '<div class="alert alert-danger alert-autohide mb-4">Erro ao agendar.</div>';
+        } catch (PDOException $e) {
+            $msg = $e->getCode() == 23000
+                ? 'Já existe reserva para este laboratório nesse dia, turno e período.'
+                : 'Erro ao agendar: ' . htmlspecialchars($e->getMessage());
+            return '<div class="alert alert-danger alert-autohide mb-4">' . $msg . '</div>';
         }
     }
 
@@ -375,7 +417,19 @@ class CoordenadorController extends BaseController
         ];
 
         foreach ($ops as $key => $fn) {
-            if (isset($_POST[$key])) { $fn(); break; }
+            if (isset($_POST[$key])) {
+                try {
+                    $fn();
+                    $verbo = str_starts_with($key, 'salvar')  ? 'criado'
+                           : (str_starts_with($key, 'editar') ? 'atualizado' : 'removido');
+                    return '<div class="alert alert-success alert-autohide mb-4">Cadastro ' . $verbo . ' com sucesso!</div>';
+                } catch (PDOException $e) {
+                    $msg = $e->getCode() == 23000
+                        ? 'Operação bloqueada: registro está em uso ou já existe.'
+                        : 'Erro no cadastro: ' . htmlspecialchars($e->getMessage());
+                    return '<div class="alert alert-danger alert-autohide mb-4">' . $msg . '</div>';
+                }
+            }
         }
 
         return $mensagem;
@@ -385,41 +439,48 @@ class CoordenadorController extends BaseController
     {
         if (!$this->isPost()) return $mensagem;
 
-        if (isset($_POST['salvar_ensalamento'])) {
-            $check = $this->pdo->prepare(
-                "SELECT u.nome AS prof_existente
-                 FROM ensalamento e
-                 JOIN usuarios u ON e.id_professor = u.id
-                 WHERE e.id_sala = ? AND e.turno = ?"
-            );
-            $check->execute([(int) $_POST['id_sala'], $_POST['turno']]);
-            if ($check->rowCount() > 0) {
-                $c = $check->fetch();
+        if (isset($_POST['salvar_ensalamento']) || isset($_POST['editar_ensalamento'])) {
+            $idProfessor  = (int) ($_POST['id_professor']  ?? 0);
+            $idDisciplina = (int) ($_POST['id_disciplina'] ?? 0);
+            $idCurso      = (int) ($_POST['id_curso']      ?? 0);
+            $idSala       = (int) ($_POST['id_sala']       ?? 0);
+            $turno        = $_POST['turno'] ?? '';
+
+            // Selects desabilitados (cascata bloco→andar→sala) não são enviados pelo navegador
+            if ($idProfessor <= 0 || $idDisciplina <= 0 || $idCurso <= 0 || $idSala <= 0 || $turno === '') {
+                return '<div class="alert alert-warning alert-autohide mb-4">Preencha todos os campos — selecione Bloco, Andar e Sala.</div>';
+            }
+
+            $editando = isset($_POST['editar_ensalamento']);
+            $idEnsalamento = $editando ? (int) $_POST['id_ensalamento'] : null;
+
+            $sql = "SELECT u.nome AS prof_existente
+                    FROM ensalamento e
+                    JOIN usuarios u ON e.id_professor = u.id
+                    WHERE e.id_sala = ? AND e.turno = ?";
+            $params = [$idSala, $turno];
+            if ($editando) { $sql .= " AND e.id != ?"; $params[] = $idEnsalamento; }
+            $check = $this->pdo->prepare($sql);
+            $check->execute($params);
+            if ($c = $check->fetch()) {
                 return '<div class="alert alert-warning alert-autohide mb-4"><strong>Choque de Sala!</strong> Em uso por Prof. ' . htmlspecialchars($c['prof_existente']) . '.</div>';
             }
-            $this->pdo->prepare("INSERT INTO ensalamento(id_professor,id_disciplina,id_curso,id_sala,categoria,turno) VALUES(?,?,?,?,?,?)")
-                ->execute([
-                    (int) $_POST['id_professor'],
-                    (int) $_POST['id_disciplina'],
-                    (int) $_POST['id_curso'],
-                    (int) $_POST['id_sala'],
-                    $_POST['categoria'] ?? null,
-                    $_POST['turno'],
-                ]);
-            return '<div class="alert alert-success alert-autohide mb-4">Ensalamento registrado!</div>';
-        }
-        if (isset($_POST['editar_ensalamento'])) {
-            $this->pdo->prepare("UPDATE ensalamento SET id_professor=?,id_disciplina=?,id_curso=?,id_sala=?,categoria=?,turno=? WHERE id=?")
-                ->execute([
-                    (int) $_POST['id_professor'],
-                    (int) $_POST['id_disciplina'],
-                    (int) $_POST['id_curso'],
-                    (int) $_POST['id_sala'],
-                    $_POST['categoria'] ?? null,
-                    $_POST['turno'],
-                    (int) $_POST['id_ensalamento'],
-                ]);
-            return '<div class="alert alert-primary alert-autohide mb-4">Ensalamento atualizado!</div>';
+
+            try {
+                if ($editando) {
+                    $this->pdo->prepare("UPDATE ensalamento SET id_professor=?,id_disciplina=?,id_curso=?,id_sala=?,categoria=?,turno=? WHERE id=?")
+                        ->execute([$idProfessor, $idDisciplina, $idCurso, $idSala, $_POST['categoria'] ?? null, $turno, $idEnsalamento]);
+                    return '<div class="alert alert-primary alert-autohide mb-4">Ensalamento atualizado!</div>';
+                }
+                $this->pdo->prepare("INSERT INTO ensalamento(id_professor,id_disciplina,id_curso,id_sala,categoria,turno) VALUES(?,?,?,?,?,?)")
+                    ->execute([$idProfessor, $idDisciplina, $idCurso, $idSala, $_POST['categoria'] ?? null, $turno]);
+                return '<div class="alert alert-success alert-autohide mb-4">Ensalamento registrado!</div>';
+            } catch (PDOException $e) {
+                $msg = $e->getCode() == 23000
+                    ? 'Sala já ocupada neste turno ou dados inválidos.'
+                    : 'Erro ao salvar ensalamento: ' . htmlspecialchars($e->getMessage());
+                return '<div class="alert alert-danger alert-autohide mb-4">' . $msg . '</div>';
+            }
         }
         if (isset($_POST['excluir_ensalamento'])) {
             $this->pdo->prepare("DELETE FROM ensalamento WHERE id=?")->execute([$_POST['id_ensalamento']]);
@@ -483,18 +544,25 @@ class CoordenadorController extends BaseController
             $stmt->execute([$idQuadro]);
             $relatorioLabs = $stmt->fetchAll();
 
-            $capMax = 60;
-            $minUso = 9999; $maxUso = -1;
+            $capPorLab = [];
+            foreach ($labs as $l) {
+                $capPorLab[$l['nome']] = max(1, (int) ($l['capacidade'] ?? 0)) * 40;
+            }
+            $capPadrao = 40;
+            $capGlobal = 0;
+            $minOcio = -1; $maxUso = -1;
             foreach ($relatorioLabs as $rl) {
+                $cap = $capPorLab[$rl['laboratorio']] ?? $capPadrao;
+                $capGlobal += $cap;
                 $usoGlobal += $rl['total'];
+                $ocioso = max(0, $cap - $rl['total']);
                 $graficoLabNomes[]  = $rl['laboratorio'];
                 $graficoLabUso[]    = $rl['total'];
-                $graficoLabOcioso[] = $capMax - $rl['total'];
+                $graficoLabOcioso[] = $ocioso;
                 if ($rl['total'] > $maxUso) { $maxUso = $rl['total']; $labMaisUsado  = ['nome' => $rl['laboratorio'], 'horas' => $rl['total']]; }
-                if ($rl['total'] < $minUso) { $minUso = $rl['total']; $labMaisOcioso = ['nome' => $rl['laboratorio'], 'horas' => $capMax - $rl['total']]; }
+                if ($ocioso > $minOcio)     { $minOcio = $ocioso;     $labMaisOcioso = ['nome' => $rl['laboratorio'], 'horas' => $ocioso]; }
             }
 
-            $capGlobal  = count($labs) * $capMax;
             $taxaOcupacao  = $capGlobal > 0 ? round(($usoGlobal / $capGlobal) * 100) : 0;
             $taxaOciosidade = 100 - $taxaOcupacao;
 

@@ -49,9 +49,9 @@ class Auth
     public static function destinoAposLogin(string $perfil): string
     {
         return match ($perfil) {
-            'coordenador' => 'index.php?page=coordenador',
-            'suporte'     => 'index.php?page=suporte',
-            default       => 'index.php?page=professor',
+            'coordenador' => '/index.php?page=coordenador',
+            'suporte'     => '/index.php?page=suporte',
+            default       => '/index.php?page=professor',
         };
     }
 }

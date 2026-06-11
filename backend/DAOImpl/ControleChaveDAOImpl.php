@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/ControleChaveDAO.php';
+require_once __DIR__ . '/../DAOs/ControleChaveDAO.php';
 
 class ControleChaveDAOImpl implements ControleChaveDAO
 {

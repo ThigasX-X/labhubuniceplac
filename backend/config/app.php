@@ -19,6 +19,13 @@ require_once ROOT_PATH . '/vendor/autoload.php';
 
 Dotenv\Dotenv::createImmutable(ROOT_PATH)->safeLoad();
 
+// PHP 8.5 transforma muitos casos legados (ex.: null em htmlspecialchars) em
+// deprecations. Mantemos warnings/erros reais visíveis, mas não poluímos a UI
+// com deprecations/notices — tudo continua sendo registrado no log.
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE);
+ini_set('display_errors', '1');
+ini_set('log_errors', '1');
+
 date_default_timezone_set('America/Sao_Paulo');
 
 if (!defined('APP_NAME'))       define('APP_NAME', 'UNICEPLAC - Central de Reservas');
