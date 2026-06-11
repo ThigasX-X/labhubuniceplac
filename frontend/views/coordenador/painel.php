@@ -10,7 +10,6 @@ $perfil      = $_SESSION['perfil']   ?? 'coordenador';
     <title>Coordenador | UNICEPLAC</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css">
     <!-- CORRIGIDO: Removida a barra inicial -->
     <link rel="stylesheet" href="assets/css/app.css">
 </head>
@@ -55,13 +54,27 @@ $perfil      = $_SESSION['perfil']   ?? 'coordenador';
 
 <!-- OFFCANVAS MENU -->
 <div class="offcanvas offcanvas-start" tabindex="-1" id="menuOffcanvas" style="width:280px;">
-    <!-- ... (Cabeçalho do Offcanvas) ... -->
+    <div class="offcanvas-header border-bottom py-3">
+        <h6 class="offcanvas-title fw-bold d-flex align-items-center gap-2">
+            <i class="bi bi-grid-3x3-gap text-primary"></i> Navegação
+        </h6>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
     <div class="offcanvas-body p-0">
         <nav class="py-2">
-            <!-- ... (Links do menu) ... -->
+            <a href="#calendario"   class="offcanvas-menu-link" onclick="showSection('calendario')"><i class="bi bi-calendar3"></i> Calendário</a>
+            <a href="#kanban"       class="offcanvas-menu-link" onclick="showSection('kanban')"><i class="bi bi-kanban"></i> Kanban de Aulas</a>
+            <a href="#solicitacoes" class="offcanvas-menu-link" onclick="showSection('solicitacoes')">
+                <i class="bi bi-inbox"></i> Solicitações
+                <?php if ($qtdPendentes > 0): ?><span class="badge bg-danger rounded-pill ms-auto"><?= $qtdPendentes ?></span><?php endif; ?>
+            </a>
+            <a href="#reservas"     class="offcanvas-menu-link" onclick="showSection('reservas')"><i class="bi bi-calendar-check"></i> Reservas Aprovadas</a>
+            <a href="#quadro"       class="offcanvas-menu-link" onclick="showSection('quadro')"><i class="bi bi-table"></i> Quadro de Horários</a>
+            <a href="#ensalamento"  class="offcanvas-menu-link" onclick="showSection('ensalamento')"><i class="bi bi-door-open"></i> Ensalamento</a>
+            <a href="#cadastros"    class="offcanvas-menu-link" onclick="showSection('cadastros')"><i class="bi bi-database"></i> Cadastros</a>
+            <a href="#relatorios"   class="offcanvas-menu-link" onclick="showSection('relatorios')"><i class="bi bi-bar-chart-line"></i> Relatórios BI</a>
             <div class="px-3 py-2 mt-2">
-                <!-- CORRIGIDO: Removida a barra inicial -->
-                <a href="index.php?page=suporte" class="btn btn-outline-secondary w-100 rounded-pill btn-sm fw-semibold">
+                <a href="/index.php?page=suporte" class="btn btn-outline-secondary w-100 rounded-pill btn-sm fw-semibold">
                     <i class="bi bi-headset me-2"></i>Ir para Suporte
                 </a>
             </div>
@@ -113,7 +126,10 @@ $perfil      = $_SESSION['perfil']   ?? 'coordenador';
 <div class="modal fade" id="modalFoto" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
-            <!-- ... -->
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-camera me-2"></i>Alterar Foto de Perfil</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
             <div class="modal-body text-center">
                 <img src="<?= htmlspecialchars($fotoAtual) ?>" class="rounded-circle mb-3 border object-fit-cover" width="100" height="100" alt="Foto atual">
                 <!-- CORRIGIDO: Removida a barra inicial -->
@@ -132,12 +148,36 @@ $perfil      = $_SESSION['perfil']   ?? 'coordenador';
 <!-- CORRIGIDO: Removida a barra inicial -->
 <script src="assets/js/app.js"></script>
 <script>
+let calendarCoord;
+
+// Sobrescreve a showSection global: ao exibir o calendário, recalcula o tamanho
+// (o FullCalendar renderiza colapsado se a aba estava escondida na inicialização).
+function showSection(id) {
+    document.querySelectorAll('.content-section').forEach(s => s.style.display = 'none');
+    document.querySelectorAll('.offcanvas-menu-link').forEach(l => l.classList.remove('active-link'));
+    const sec  = document.getElementById(id);
+    const link = document.querySelector(`.offcanvas-menu-link[href="#${id}"]`);
+    if (sec)  sec.style.display = 'block';
+    if (link) link.classList.add('active-link');
+    window.history.replaceState(null, null, '#' + id);
+    if (id === 'calendario' && calendarCoord) {
+        setTimeout(() => calendarCoord.updateSize(), 100);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     autoOcultarMensagens();
 
-    // Seção inicial via hash
-    const hash = window.location.hash.replace('#', '') || 'calendario';
+    // Seção inicial: hash da URL ou a aba definida pelo controller após um POST
+    const hash = window.location.hash.replace('#', '') || '<?= $abaAtiva ?>';
     showSection(hash);
+
+    // Fecha o menu lateral ao escolher uma seção
+    document.querySelectorAll('#menuOffcanvas .offcanvas-menu-link').forEach(l => {
+        l.addEventListener('click', () => {
+            bootstrap.Offcanvas.getInstance(document.getElementById('menuOffcanvas'))?.hide();
+        });
+    });
 
     // Tema
     const savedTheme = localStorage.getItem('labhub-theme') || 'light';
@@ -155,7 +195,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const calEl = document.getElementById('calendar');
     if (calEl) {
         const eventos = <?= $eventosJson ?>;
-        const calendar = new FullCalendar.Calendar(calEl, {
+        calendarCoord = new FullCalendar.Calendar(calEl, {
             locale: 'pt-br',
             initialView: 'dayGridMonth',
             height: 'auto',
@@ -169,7 +209,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 new bootstrap.Modal(document.getElementById('modalEvento')).show();
             },
         });
-        calendar.render();
+        calendarCoord.render();
+        // Garante o recálculo se o calendário já é a aba inicial visível
+        if (document.getElementById('calendario')?.style.display !== 'none') {
+            setTimeout(() => calendarCoord.updateSize(), 100);
+        }
     }
 
     // Drag & Drop Kanban
@@ -192,7 +236,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: `action=mover_aula&id_aula=${idAula}&novo_dia=${encodeURIComponent(novoDia)}`
-            }).then(r => r.json()).then(d => { if (d.ok) location.reload(); else alert(d.erro || 'Erro ao mover.'); });
+            }).then(r => r.json()).then(d => { if (d.success) location.reload(); else alert(d.error || 'Erro ao mover.'); });
         });
     });
 
