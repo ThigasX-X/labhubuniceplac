@@ -25,7 +25,7 @@ class AuthController extends BaseController
         // Mantemos suas mensagens de feedback via GET
         if (isset($_GET['msg'])) {
             $sucesso = match ($_GET['msg']) {
-                'cadastro_ok'      => 'Cadastro realizado! Aguarde ativação.',
+                'cadastro_ok'      => 'Cadastro realizado! Você já pode fazer login.',
                 'email_confirmado' => 'E-mail confirmado! Você já pode fazer login.',
                 default            => '',
             };
@@ -73,12 +73,14 @@ class AuthController extends BaseController
                 $mensagem = '<div class="alert alert-danger py-2 small">Use apenas seu e-mail institucional.</div>';
             } elseif (strlen($dados['senha']) < 8) {
                 $mensagem = '<div class="alert alert-danger py-2 small">A senha deve ter pelo menos 8 caracteres.</div>';
+            } elseif ($dados['senha'] !== $dados['confirmar_senha']) {
+                $mensagem = '<div class="alert alert-danger py-2 small">As senhas não coincidem.</div>';
             } else {
                 // --- DELEGAMOS PARA O SERVICE (O Cérebro) ---
                 $resultado = $this->cadastroService->salvar($dados);
 
                 if ($resultado['status'] === 'success') {
-                    $mensagem = '<div class="alert alert-success py-2 small">✅ Cadastro realizado com sucesso!</div>';
+                    $this->redirect('login', ['msg' => 'cadastro_ok']);
                 } else {
                     $mensagem = '<div class="alert alert-warning py-2 small">' . $resultado['message'] . '</div>';
                 }
@@ -121,8 +123,13 @@ class AuthController extends BaseController
             $client->setAccessToken($token['access_token']);
             $info = (new Google\Service\Oauth2($client))->userinfo->get();
 
-            $model   = new Usuario($this->pdo);
-            $usuario = $model->upsertGoogle($info->email, $info->name, $info->id, $info->picture);
+            // Restringe a um domínio (ex.: uniceplac.edu.br) se configurado no .env
+            $dominioPermitido = getenv('GOOGLE_ALLOWED_DOMAIN') ?: ($_ENV['GOOGLE_ALLOWED_DOMAIN'] ?? '');
+            if ($dominioPermitido !== '' && !str_ends_with($info->email, '@' . ltrim($dominioPermitido, '@'))) {
+                die('Acesso negado: use seu e-mail institucional (@' . htmlspecialchars(ltrim($dominioPermitido, '@')) . ').');
+            }
+
+            $usuario = $this->usuarioDAO->upsertGoogle($info->email, $info->name, $info->picture);
 
             Auth::login($usuario);
             $_SESSION['foto'] = $info->picture;
@@ -132,6 +139,43 @@ class AuthController extends BaseController
         } catch (Exception $e) {
             die('Erro Crítico: ' . htmlspecialchars($e->getMessage()));
         }
+    }
+
+    public function verificar(): void
+    {
+        $token = trim($_GET['token'] ?? '');
+
+        if ($token === '') {
+            $this->render('auth/verificar', [
+                'tipoAlerta' => 'warning',
+                'mensagem'   => 'Nenhum código de verificação foi fornecido. Acesse o link enviado para o seu e-mail.',
+            ]);
+            return;
+        }
+
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT id, nome FROM usuarios WHERE token_verificacao = ? AND email_verificado = 0 LIMIT 1"
+            );
+            $stmt->execute([$token]);
+            $usuario = $stmt->fetch();
+
+            if ($usuario) {
+                $this->pdo->prepare("UPDATE usuarios SET email_verificado = 1, token_verificacao = NULL WHERE id = ?")
+                    ->execute([$usuario['id']]);
+                $tipoAlerta = 'success';
+                $mensagem   = 'Excelente, ' . $usuario['nome'] . '! Seu e-mail foi verificado com sucesso. Acesso liberado.';
+            } else {
+                $tipoAlerta = 'danger';
+                $mensagem   = 'Link de verificação inválido ou sua conta já foi verificada anteriormente.';
+            }
+        } catch (PDOException) {
+            // Banco sem a coluna token_verificacao (cadastro atual já ativa a conta direto)
+            $tipoAlerta = 'danger';
+            $mensagem   = 'Link de verificação inválido ou sua conta já foi verificada anteriormente.';
+        }
+
+        $this->render('auth/verificar', compact('tipoAlerta', 'mensagem'));
     }
 
     public function logout(): void
