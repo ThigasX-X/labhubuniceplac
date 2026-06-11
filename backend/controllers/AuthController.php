@@ -96,7 +96,13 @@ class AuthController extends BaseController
 
         $clientID     = getenv('GOOGLE_CLIENT_ID')     ?: ($_ENV['GOOGLE_CLIENT_ID']     ?? '');
         $clientSecret = getenv('GOOGLE_CLIENT_SECRET') ?: ($_ENV['GOOGLE_CLIENT_SECRET'] ?? '');
-        $redirectUri  = getenv('GOOGLE_REDIRECT_URI')  ?: ($_ENV['GOOGLE_REDIRECT_URI']  ?? 'http://localhost/index.php?page=google');
+
+        // Redirect dinâmico: deriva do host atual (funciona em localhost ou atrás de túnel/proxy).
+        // Defina GOOGLE_REDIRECT_URI no .env para forçar um valor fixo.
+        $envRedirect  = getenv('GOOGLE_REDIRECT_URI') ?: ($_ENV['GOOGLE_REDIRECT_URI'] ?? '');
+        $proto        = (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https' || !empty($_SERVER['HTTPS'])) ? 'https' : 'http';
+        $host         = $_SERVER['HTTP_HOST'] ?? 'localhost:8000';
+        $redirectUri  = $envRedirect ?: "{$proto}://{$host}/index.php?page=google";
 
         $client = new Google\Client();
         $client->setClientId($clientID);
