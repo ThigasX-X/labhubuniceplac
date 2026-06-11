@@ -23,7 +23,9 @@ Dotenv\Dotenv::createImmutable(ROOT_PATH)->safeLoad();
 // deprecations. Mantemos warnings/erros reais visíveis, mas não poluímos a UI
 // com deprecations/notices — tudo continua sendo registrado no log.
 error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE);
-ini_set('display_errors', '1');
+// Em produção/exposição pública, APP_DEBUG=false esconde erros da tela (ficam no log)
+$debug = (getenv('APP_DEBUG') ?: ($_ENV['APP_DEBUG'] ?? 'true')) === 'true';
+ini_set('display_errors', $debug ? '1' : '0');
 ini_set('log_errors', '1');
 
 date_default_timezone_set('America/Sao_Paulo');
