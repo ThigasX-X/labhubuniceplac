@@ -48,8 +48,31 @@ include VIEWS_PATH . '/layouts/painel_open.php';
 </div>
 
 <?php
-$painelScriptsExtra = 'document.addEventListener("DOMContentLoaded", function () {
+$painelScriptsExtra = 'let qtdChamadosAnterior = null;
+let audioLiberado = false;
+const somAlerta = new Audio("assets/sounds/alerta-chamado.mp3");
+somAlerta.preload = "auto";
+
+// Navegadores bloqueiam áudio automático até o usuário interagir com a página.
+// No primeiro clique/tecla, "destravamos" o som tocando-o mudo uma vez; depois
+// disso o play() disparado pelo polling passa a funcionar.
+function liberarAudio() {
+    somAlerta.muted = true;
+    somAlerta.play().then(() => {
+        somAlerta.pause();
+        somAlerta.currentTime = 0;
+        somAlerta.muted = false;
+        audioLiberado = true;
+    }).catch(() => { somAlerta.muted = false; });
+    document.removeEventListener("click", liberarAudio);
+    document.removeEventListener("keydown", liberarAudio);
+}
+document.addEventListener("click", liberarAudio);
+document.addEventListener("keydown", liberarAudio);
+
+document.addEventListener("DOMContentLoaded", function () {
     initLabHubPanel({ defaultSection: "sessao-mapa-diario" });
+    verificarSOS();                 // estabelece a contagem inicial sem alertar
     setInterval(verificarSOS, 8000);
 });
 
@@ -57,11 +80,16 @@ function verificarSOS() {
     fetch("index.php?page=api/check-sos-status")
         .then(r => r.json())
         .then(data => {
+            // Alerta sonoro só quando CHEGA um chamado novo (não no 1º carregamento).
+            if (qtdChamadosAnterior !== null && data.qtd_suporte > qtdChamadosAnterior) {
+                somAlerta.currentTime = 0;
+                somAlerta.play().catch(() => {}); // ainda sem gesto do usuário: ignora
+            }
+            qtdChamadosAnterior = data.qtd_suporte;
+
             const area = document.getElementById("area-chamados-dinamica");
-            if (data.qtd_suporte > 0 && area) {
-                area.innerHTML = data.html_suporte;
-            } else if (area) {
-                area.innerHTML = "";
+            if (area) {
+                area.innerHTML = data.qtd_suporte > 0 ? data.html_suporte : "";
             }
         }).catch(() => {});
 }';
