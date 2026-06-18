@@ -518,7 +518,7 @@ class CoordenadorController extends BaseController
         $labMaisOcioso = ['nome' => '-', 'horas' => 0];
 
         try {
-            $sql = "SELECT p.nome as professor,
+            $sql = "SELECT p.id as id_professor, p.nome as professor,
                     SUM(CASE WHEN qa.dia_semana='Segunda' THEN qa.carga_horaria_total ELSE 0 END) as seg_t,
                     SUM(CASE WHEN qa.dia_semana='Segunda' THEN qa.horas_laboratorio ELSE 0 END) as seg_l,
                     SUM(CASE WHEN qa.dia_semana='Terça'   THEN qa.carga_horaria_total ELSE 0 END) as ter_t,
@@ -538,6 +538,38 @@ class CoordenadorController extends BaseController
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([$idQuadro]);
             $relatorioProfessores = $stmt->fetchAll();
+
+            // Laboratório/sala principal de cada professor (onde concentra mais horas).
+            $principalPorProf = [];
+            $stmtPrinc = $this->pdo->prepare(
+                "SELECT qa.id_professor, l.nome AS lab, s.nome AS sala,
+                        SUM(qa.horas_laboratorio) AS h, COUNT(*) AS c
+                 FROM quadro_aulas qa
+                 LEFT JOIN laboratorios l ON qa.id_laboratorio = l.id
+                 LEFT JOIN salas        s ON qa.id_sala        = s.id
+                 WHERE qa.id_quadro = ?
+                 GROUP BY qa.id_professor, l.id, s.id
+                 ORDER BY h DESC, c DESC"
+            );
+            $stmtPrinc->execute([$idQuadro]);
+            foreach ($stmtPrinc->fetchAll() as $row) {
+                $pid = (int) $row['id_professor'];
+                if (!isset($principalPorProf[$pid])) {
+                    $principalPorProf[$pid] = [
+                        'lab'  => $row['lab']  ?? '-',
+                        'sala' => $row['sala'] ?? '-',
+                    ];
+                }
+            }
+
+            // Enriquece cada linha com as chaves consumidas pela tabela (horas/lab/sala).
+            foreach ($relatorioProfessores as &$rp) {
+                $pid        = (int) ($rp['id_professor'] ?? 0);
+                $rp['horas'] = $rp['total'];
+                $rp['lab']   = $principalPorProf[$pid]['lab']  ?? '-';
+                $rp['sala']  = $principalPorProf[$pid]['sala'] ?? '-';
+            }
+            unset($rp);
 
             foreach (array_slice($relatorioProfessores, 0, 10) as $rp) {
                 $graficoProfNomes[] = $rp['professor'];
@@ -561,24 +593,31 @@ class CoordenadorController extends BaseController
             $stmt->execute([$idQuadro]);
             $relatorioLabs = $stmt->fetchAll();
 
-            $capPorLab = [];
-            foreach ($labs as $l) {
-                $capPorLab[$l['nome']] = max(1, (int) ($l['capacidade'] ?? 0)) * 40;
-            }
-            $capPadrao = 40;
+            // Capacidade = janela operacional do laboratório por semana, em horas.
+            // (6 dias úteis × 3 turnos × ~3,3h ≈ 60h). É uma medida de TEMPO, por isso
+            // não usamos a capacidade de assentos, que mede pessoas, não horas.
+            $capSemanalLab = 60;
             $capGlobal = 0;
             $minOcio = -1; $maxUso = -1;
-            foreach ($relatorioLabs as $rl) {
-                $cap = $capPorLab[$rl['laboratorio']] ?? $capPadrao;
-                $capGlobal += $cap;
-                $usoGlobal += $rl['total'];
-                $ocioso = max(0, $cap - $rl['total']);
+            foreach ($relatorioLabs as &$rl) {
+                $uso    = (float) $rl['total'];
+                $ocioso = max(0, $capSemanalLab - $uso);
+                $taxa   = $capSemanalLab > 0 ? round(($uso / $capSemanalLab) * 100) : 0;
+
+                // Chaves consumidas pela tabela "Relatório por Laboratório".
+                $rl['horas_uso']     = $uso;
+                $rl['horas_ocioso']  = $ocioso;
+                $rl['taxa_ocupacao'] = $taxa;
+
+                $capGlobal += $capSemanalLab;
+                $usoGlobal += $uso;
                 $graficoLabNomes[]  = $rl['laboratorio'];
-                $graficoLabUso[]    = $rl['total'];
+                $graficoLabUso[]    = $uso;
                 $graficoLabOcioso[] = $ocioso;
-                if ($rl['total'] > $maxUso) { $maxUso = $rl['total']; $labMaisUsado  = ['nome' => $rl['laboratorio'], 'horas' => $rl['total']]; }
-                if ($ocioso > $minOcio)     { $minOcio = $ocioso;     $labMaisOcioso = ['nome' => $rl['laboratorio'], 'horas' => $ocioso]; }
+                if ($uso > $maxUso)     { $maxUso = $uso;     $labMaisUsado  = ['nome' => $rl['laboratorio'], 'horas' => $uso]; }
+                if ($ocioso > $minOcio) { $minOcio = $ocioso; $labMaisOcioso = ['nome' => $rl['laboratorio'], 'horas' => $ocioso]; }
             }
+            unset($rl);
 
             $taxaOcupacao  = $capGlobal > 0 ? round(($usoGlobal / $capGlobal) * 100) : 0;
             $taxaOciosidade = 100 - $taxaOcupacao;
