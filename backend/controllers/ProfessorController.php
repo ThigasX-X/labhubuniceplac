@@ -13,7 +13,7 @@ class ProfessorController extends BaseController
         $this->requireAuth('professor');
 
         $idProfessor = Auth::id();
-        $mensagem    = '';
+        $mensagem    = $this->consumeFlash();
         $abaAtiva    = 'sessao-calendario';
 
         $agendamento   = new Agendamento($this->pdo);
@@ -71,16 +71,34 @@ class ProfessorController extends BaseController
             }
         }
 
-        // --- SOS ---
+        // --- SOS (aula em andamento) ---
         if ($this->isPost() && isset($_POST['acao_sos'])) {
-            $abaAtiva = 'sessao-dashboard';
             try {
                 $chamadoModel->abrir($idProfessor, Auth::nome(), $_POST['laboratorio_sos'], trim($_POST['mensagem_sos']));
-                $mensagem = '<div class="alert alert-success alert-autohide rounded-0 border-start border-4 border-success mb-4">'
-                    . '<i class="bi bi-check-circle-fill me-2"></i><strong>SOS Enviado!</strong> Suporte notificado.</div>';
+                $this->flash('<div class="alert alert-success alert-autohide rounded-0 border-start border-4 border-success mb-4">'
+                    . '<i class="bi bi-check-circle-fill me-2"></i><strong>SOS Enviado!</strong> Suporte notificado.</div>');
             } catch (PDOException) {
-                $mensagem = '<div class="alert alert-danger alert-autohide mb-4">Erro ao enviar SOS.</div>';
+                $this->flash('<div class="alert alert-danger alert-autohide mb-4">Erro ao enviar SOS.</div>');
             }
+            $this->redirect('professor', [], 'sessao-dashboard');
+        }
+
+        // --- CHAMADO GERAL ---
+        if ($this->isPost() && isset($_POST['abrir_chamado'])) {
+            $local = trim($_POST['local_chamado'] ?? '');
+            $msg   = trim($_POST['mensagem_chamado'] ?? '');
+            if ($local === '' || $msg === '') {
+                $this->flash('<div class="alert alert-warning alert-autohide mb-4">Informe o local e a descrição do problema.</div>');
+            } else {
+                try {
+                    $chamadoModel->abrir($idProfessor, Auth::nome(), $local, $msg);
+                    $this->flash('<div class="alert alert-success alert-autohide mb-4">'
+                        . '<i class="bi bi-check-circle me-2"></i>Chamado enviado! A equipe de suporte foi notificada.</div>');
+                } catch (PDOException) {
+                    $this->flash('<div class="alert alert-danger alert-autohide mb-4">Erro ao abrir chamado.</div>');
+                }
+            }
+            $this->redirect('professor', [], 'sessao-chamados');
         }
 
         // --- SOLICITAR AGENDAMENTO ---
@@ -119,6 +137,10 @@ class ProfessorController extends BaseController
             }
         }
 
+        if ($this->isPost()) {
+            $this->finishPostRedirect('professor', $abaAtiva, [], $mensagem);
+        }
+
         // --- DADOS ---
         $laboratorios = $agendamento->buscarLaboratorios();
         $disciplinas  = $agendamento->buscarDisciplinas();
@@ -133,6 +155,7 @@ class ProfessorController extends BaseController
                 "SELECT e.id, e.categoria, e.turno,
                         d.nome  AS disciplina,
                         c.nome  AS curso,
+                        sem.nome AS turma,
                         s.nome  AS sala,
                         a.nome  AS andar,
                         b.nome  AS bloco
@@ -142,6 +165,7 @@ class ProfessorController extends BaseController
                  JOIN salas       s ON e.id_sala       = s.id
                  JOIN andares     a ON s.id_andar      = a.id
                  JOIN blocos      b ON a.id_bloco      = b.id
+                 LEFT JOIN semestres sem ON e.id_semestre = sem.id
                  WHERE e.id_professor = ?
                  ORDER BY FIELD(e.turno,'Matutino','Vespertino','Noturno'), c.nome"
             );
@@ -188,12 +212,14 @@ class ProfessorController extends BaseController
                 "SELECT qa.id, qa.turno, qa.modalidade, qa.dia_semana,
                         d.nome AS disciplina,
                         c.nome AS curso,
+                        sem.nome AS turma,
                         s.nome AS sala,
                         a.nome AS andar,
                         b.nome AS bloco
                  FROM quadro_aulas qa
                  JOIN disciplinas d ON qa.id_disciplina = d.id
                  JOIN cursos      c ON qa.id_curso      = c.id
+                 JOIN semestres   sem ON qa.id_semestre = sem.id
                  JOIN salas       s ON qa.id_sala       = s.id
                  JOIN andares     a ON s.id_andar       = a.id
                  JOIN blocos      b ON a.id_bloco       = b.id
@@ -206,6 +232,7 @@ class ProfessorController extends BaseController
                     'disciplina' => $sf['disciplina'],
                     'turno'      => $sf['turno'],
                     'curso'      => $sf['curso'],
+                    'turma'      => $sf['turma'],
                     'categoria'  => $sf['modalidade'] . ' (' . $sf['dia_semana'] . ')',
                     'bloco'      => $sf['bloco'],
                     'andar'      => $sf['andar'],
@@ -336,12 +363,23 @@ class ProfessorController extends BaseController
 
         $fotoAtual = Auth::foto();
 
+        $meusChamados          = $chamadoModel->listarPorProfessor($idProfessor);
+        $qtdChamadosPendentes  = $chamadoModel->countPendentesProfessor($idProfessor);
+        $locaisEnsalamento     = [];
+        foreach ($meuEnsalamento as $e) {
+            $loc = 'Sala ' . ($e['sala'] ?? '-') . ' — ' . ($e['bloco'] ?? '-') . ' / ' . ($e['andar'] ?? '-');
+            if (!in_array($loc, $locaisEnsalamento, true)) {
+                $locaisEnsalamento[] = $loc;
+            }
+        }
+
         $this->render('professor/painel_professor', compact(
             'mensagem', 'abaAtiva', 'laboratorios', 'disciplinas',
             'minhasAlocacoes', 'chavesRetiradas',
             'proximasMatutino', 'proximasVespertino', 'proximasNoturno',
             'ensalamentoMatutino', 'ensalamentoVespertino', 'ensalamentoNoturno',
-            'qtdPendentes', 'eventosJson', 'hoje', 'fotoAtual'
+            'qtdPendentes', 'eventosJson', 'hoje', 'fotoAtual',
+            'meusChamados', 'qtdChamadosPendentes', 'locaisEnsalamento'
         ));
     }
 

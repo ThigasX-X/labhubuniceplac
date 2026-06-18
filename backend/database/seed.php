@@ -60,4 +60,20 @@ foreach ($andares as $a) {
     }
 }
 echo "✅ Andares e salas criados.\n";
+
+// Ensalamento de demonstração
+$idProf = (int) $pdo->query("SELECT id FROM usuarios WHERE email='professor@uniceplac.edu.br'")->fetchColumn();
+$idDisc = (int) $pdo->query("SELECT id FROM disciplinas WHERE nome='Algoritmos' LIMIT 1")->fetchColumn();
+$idCurso = (int) $pdo->query("SELECT id FROM cursos LIMIT 1")->fetchColumn();
+$idSem = (int) $pdo->query("SELECT id FROM semestres LIMIT 1")->fetchColumn();
+$idSala = (int) $pdo->query("SELECT s.id FROM salas s JOIN andares a ON s.id_andar=a.id JOIN blocos b ON a.id_bloco=b.id WHERE b.nome='Bloco A' LIMIT 1")->fetchColumn();
+
+if ($idProf && $idDisc && $idCurso && $idSem && $idSala) {
+    $pdo->prepare(
+        "INSERT IGNORE INTO ensalamento (id_professor, id_disciplina, id_curso, id_semestre, id_sala, categoria, turno)
+         VALUES (?, ?, ?, ?, ?, 'Presencial', 'Matutino')"
+    )->execute([$idProf, $idDisc, $idCurso, $idSem, $idSala]);
+    echo "✅ Ensalamento demo criado.\n";
+}
+
 echo "\n🏁 Seed concluído.\n";

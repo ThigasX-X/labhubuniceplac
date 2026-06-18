@@ -19,10 +19,9 @@ class AuthController extends BaseController
 
     public function login(): void
     {
-        $erro = '';
+        $erro    = $this->consumeFlashPlain();
         $sucesso = '';
 
-        // Mantemos suas mensagens de feedback via GET
         if (isset($_GET['msg'])) {
             $sucesso = match ($_GET['msg']) {
                 'cadastro_ok'      => 'Cadastro realizado! Você já pode fazer login.',
@@ -35,20 +34,20 @@ class AuthController extends BaseController
             $email = trim($_POST['email'] ?? '');
             $senha = $_POST['senha'] ?? '';
 
-            // Usamos o DAO agora
             $usuario = $this->usuarioDAO->findByEmail($email);
 
             if ($usuario && password_verify($senha, $usuario['senha'])) {
                 if ($usuario['email_verificado'] == 0) {
-                    $erro = 'Seu acesso está bloqueado. Confirme seu e-mail.';
-                } else {
-                    Auth::login($usuario);
-                    header('Location: ' . Auth::destinoAposLogin($usuario['perfil']));
-                    exit;
+                    $this->flashPlain('Seu acesso está bloqueado. Confirme seu e-mail.');
+                    $this->redirect('login');
                 }
-            } else {
-                $erro = 'E-mail ou senha incorretos!';
+                Auth::login($usuario);
+                header('Location: ' . Auth::destinoAposLogin($usuario['perfil']));
+                exit;
             }
+
+            $this->flashPlain('E-mail ou senha incorretos!');
+            $this->redirect('login');
         }
 
         $this->render('auth/login', compact('erro', 'sucesso'));
@@ -56,35 +55,33 @@ class AuthController extends BaseController
 
     public function cadastro(): void
     {
-        $mensagem = '';
+        $mensagem = $this->consumeFlash();
 
         if ($this->isPost() && isset($_POST['cadastrar_banco'])) {
-            // Preparamos os dados para o Service
             $dados = [
                 'nome'            => trim($_POST['nome'] ?? ''),
                 'email'           => trim($_POST['email'] ?? ''),
                 'senha'           => $_POST['senha'] ?? '',
                 'confirmar_senha' => $_POST['confirmar_senha'] ?? '',
-                'perfil'          => 'professor'
+                'perfil'          => 'professor',
             ];
 
-            // --- VALIDAÇÕES RÁPIDAS DE INTERFACE ---
             if (!str_ends_with($dados['email'], '@uniceplac.edu.br')) {
-                $mensagem = '<div class="alert alert-danger py-2 small">Use apenas seu e-mail institucional.</div>';
+                $flash = '<div class="alert alert-danger py-2 small">Use apenas seu e-mail institucional.</div>';
             } elseif (strlen($dados['senha']) < 8) {
-                $mensagem = '<div class="alert alert-danger py-2 small">A senha deve ter pelo menos 8 caracteres.</div>';
+                $flash = '<div class="alert alert-danger py-2 small">A senha deve ter pelo menos 8 caracteres.</div>';
             } elseif ($dados['senha'] !== $dados['confirmar_senha']) {
-                $mensagem = '<div class="alert alert-danger py-2 small">As senhas não coincidem.</div>';
+                $flash = '<div class="alert alert-danger py-2 small">As senhas não coincidem.</div>';
             } else {
-                // --- DELEGAMOS PARA O SERVICE (O Cérebro) ---
                 $resultado = $this->cadastroService->salvar($dados);
-
                 if ($resultado['status'] === 'success') {
                     $this->redirect('login', ['msg' => 'cadastro_ok']);
-                } else {
-                    $mensagem = '<div class="alert alert-warning py-2 small">' . $resultado['message'] . '</div>';
                 }
+                $flash = '<div class="alert alert-warning py-2 small">' . htmlspecialchars($resultado['message']) . '</div>';
             }
+
+            $this->flash($flash ?? '');
+            $this->redirect('cadastro');
         }
 
         $this->render('auth/cadastro', compact('mensagem'));

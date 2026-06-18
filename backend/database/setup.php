@@ -148,6 +148,7 @@ try {
         id_professor INT NOT NULL,
         id_disciplina INT NOT NULL,
         id_curso INT NOT NULL,
+        id_semestre INT DEFAULT NULL,
         id_sala INT NOT NULL,
         categoria VARCHAR(50) DEFAULT NULL,
         turno ENUM('Matutino','Vespertino','Noturno') NOT NULL,
@@ -156,6 +157,7 @@ try {
         CONSTRAINT fk_ensal_prof  FOREIGN KEY (id_professor)  REFERENCES usuarios(id)    ON DELETE CASCADE,
         CONSTRAINT fk_ensal_disc  FOREIGN KEY (id_disciplina) REFERENCES disciplinas(id) ON DELETE RESTRICT,
         CONSTRAINT fk_ensal_curso FOREIGN KEY (id_curso)      REFERENCES cursos(id)      ON DELETE RESTRICT,
+        CONSTRAINT fk_ensal_sem   FOREIGN KEY (id_semestre)   REFERENCES semestres(id)   ON DELETE SET NULL,
         CONSTRAINT fk_ensal_sala  FOREIGN KEY (id_sala)       REFERENCES salas(id)       ON DELETE RESTRICT,
         UNIQUE KEY uq_ensal_sala_turno (id_sala, turno),
         INDEX idx_ensal_prof (id_professor)

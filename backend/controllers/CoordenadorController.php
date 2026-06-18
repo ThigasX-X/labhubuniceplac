@@ -8,6 +8,7 @@ require_once BACKEND_PATH . '/models/ChamadoSuporte.php';
 require_once BACKEND_PATH . '/helpers/Auth.php';
 require_once BACKEND_PATH . '/helpers/Upload.php';
 require_once BACKEND_PATH . '/helpers/HorarioHelper.php';
+require_once BACKEND_PATH . '/helpers/EnsalamentoHelper.php';
 
 class CoordenadorController extends BaseController
 {
@@ -27,7 +28,7 @@ class CoordenadorController extends BaseController
         }
 
         $idUsuario = Auth::id();
-        $mensagem  = '';
+        $mensagem  = $this->consumeFlash();
 
         $agendamentoModel = new Agendamento($this->pdo);
         $labModel         = new Laboratorio($this->pdo);
@@ -116,6 +117,14 @@ class CoordenadorController extends BaseController
         // --- ENSALAMENTO ---
         $mensagem = $this->processarEnsalamento($mensagem);
 
+        if ($this->isPost()) {
+            $params = [];
+            if (!empty($_POST['id_quadro_ativo'])) {
+                $params['q_id'] = $_POST['id_quadro_ativo'];
+            }
+            $this->finishPostRedirect('coordenador', $this->definirAbaAtiva(), $params, $mensagem);
+        }
+
         // --- DADOS ---
         $reservasPendentes    = $agendamentoModel->listarSolicitacoesPendentes();
         $agendamentosAprovados = $agendamentoModel->listarReservasConfirmadas();
@@ -147,18 +156,20 @@ class CoordenadorController extends BaseController
                     u.nome   AS professor,
                     d.nome   AS disciplina,
                     c.nome   AS curso,
+                    sem.nome AS turma,
                     s.nome   AS sala,
                     a.nome   AS andar,
                     b.nome   AS bloco,
                     a.id     AS id_andar,
                     b.id     AS id_bloco
              FROM ensalamento e
-             JOIN usuarios    u ON e.id_professor  = u.id
-             JOIN disciplinas d ON e.id_disciplina = d.id
-             JOIN cursos      c ON e.id_curso      = c.id
-             JOIN salas       s ON e.id_sala       = s.id
-             JOIN andares     a ON s.id_andar      = a.id
-             JOIN blocos      b ON a.id_bloco      = b.id
+             JOIN usuarios    u   ON e.id_professor  = u.id
+             JOIN disciplinas d   ON e.id_disciplina = d.id
+             JOIN cursos      c   ON e.id_curso      = c.id
+             JOIN salas       s   ON e.id_sala       = s.id
+             JOIN andares     a   ON s.id_andar      = a.id
+             JOIN blocos      b   ON a.id_bloco      = b.id
+             LEFT JOIN semestres sem ON e.id_semestre = sem.id
              ORDER BY c.nome, e.turno, b.nome, a.nome, s.nome"
         )->fetchAll();
 
@@ -168,6 +179,11 @@ class CoordenadorController extends BaseController
         $quadroSelecionado = $_GET['q_id']
             ?? ($_POST['id_quadro_ativo'] ?? null)
             ?? (count($listaQuadros) > 0 ? $listaQuadros[0]['id'] : null);
+
+        $mapaEnsalamento = EnsalamentoHelper::mapaCentralizado(
+            $this->pdo,
+            $quadroSelecionado ? (int) $quadroSelecionado : null
+        );
 
         $todasAulas   = [];
         $aulasDiaSemana = ['Segunda' => [], 'Terça' => [], 'Quarta' => [], 'Quinta' => [], 'Sexta' => [], 'Sábado' => []];
@@ -249,7 +265,7 @@ class CoordenadorController extends BaseController
             'reservasPendentes', 'agendamentosAprovados', 'historicoCompleto',
             'professores', 'laboratoriosCadastrados', 'disciplinas',
             'cursosCadastrados', 'semestres', 'blocosCadastrados', 'andaresCadastrados', 'salasCadastradas',
-            'listaEnsalamentos', 'listaQuadros', 'quadroSelecionado',
+            'listaEnsalamentos', 'mapaEnsalamento', 'listaQuadros', 'quadroSelecionado',
             'todasAulas', 'aulasDiaSemana',
             'relatorioProfessores', 'relatorioLabs',
             'graficoProfNomes', 'graficoProfHoras', 'graficoProfLab', 'graficoProfSala',
@@ -443,12 +459,13 @@ class CoordenadorController extends BaseController
             $idProfessor  = (int) ($_POST['id_professor']  ?? 0);
             $idDisciplina = (int) ($_POST['id_disciplina'] ?? 0);
             $idCurso      = (int) ($_POST['id_curso']      ?? 0);
+            $idSemestre   = (int) ($_POST['id_semestre']   ?? 0);
             $idSala       = (int) ($_POST['id_sala']       ?? 0);
             $turno        = $_POST['turno'] ?? '';
 
             // Selects desabilitados (cascata bloco→andar→sala) não são enviados pelo navegador
-            if ($idProfessor <= 0 || $idDisciplina <= 0 || $idCurso <= 0 || $idSala <= 0 || $turno === '') {
-                return '<div class="alert alert-warning alert-autohide mb-4">Preencha todos os campos — selecione Bloco, Andar e Sala.</div>';
+            if ($idProfessor <= 0 || $idDisciplina <= 0 || $idCurso <= 0 || $idSemestre <= 0 || $idSala <= 0 || $turno === '') {
+                return '<div class="alert alert-warning alert-autohide mb-4">Preencha todos os campos — selecione Bloco, Andar, Sala e Turma.</div>';
             }
 
             $editando = isset($_POST['editar_ensalamento']);
@@ -468,12 +485,12 @@ class CoordenadorController extends BaseController
 
             try {
                 if ($editando) {
-                    $this->pdo->prepare("UPDATE ensalamento SET id_professor=?,id_disciplina=?,id_curso=?,id_sala=?,categoria=?,turno=? WHERE id=?")
-                        ->execute([$idProfessor, $idDisciplina, $idCurso, $idSala, $_POST['categoria'] ?? null, $turno, $idEnsalamento]);
+                    $this->pdo->prepare("UPDATE ensalamento SET id_professor=?,id_disciplina=?,id_curso=?,id_semestre=?,id_sala=?,categoria=?,turno=? WHERE id=?")
+                        ->execute([$idProfessor, $idDisciplina, $idCurso, $idSemestre, $idSala, $_POST['categoria'] ?? null, $turno, $idEnsalamento]);
                     return '<div class="alert alert-primary alert-autohide mb-4">Ensalamento atualizado!</div>';
                 }
-                $this->pdo->prepare("INSERT INTO ensalamento(id_professor,id_disciplina,id_curso,id_sala,categoria,turno) VALUES(?,?,?,?,?,?)")
-                    ->execute([$idProfessor, $idDisciplina, $idCurso, $idSala, $_POST['categoria'] ?? null, $turno]);
+                $this->pdo->prepare("INSERT INTO ensalamento(id_professor,id_disciplina,id_curso,id_semestre,id_sala,categoria,turno) VALUES(?,?,?,?,?,?,?)")
+                    ->execute([$idProfessor, $idDisciplina, $idCurso, $idSemestre, $idSala, $_POST['categoria'] ?? null, $turno]);
                 return '<div class="alert alert-success alert-autohide mb-4">Ensalamento registrado!</div>';
             } catch (PDOException $e) {
                 $msg = $e->getCode() == 23000

@@ -20,11 +20,50 @@ abstract class BaseController
         include $viewFile;
     }
 
-    protected function redirect(string $page, array $params = []): void
+    protected function redirect(string $page, array $params = [], ?string $hash = null): void
     {
         $query = http_build_query(array_merge(['page' => $page], $params));
-        header("Location: /index.php?{$query}");
+        $url   = "/index.php?{$query}" . ($hash ? '#' . rawurlencode($hash) : '');
+        header("Location: {$url}");
         exit;
+    }
+
+    protected function flash(string $html): void
+    {
+        $_SESSION['_flash'] = $html;
+    }
+
+    protected function flashPlain(string $text): void
+    {
+        $_SESSION['_flash_plain'] = $text;
+    }
+
+    protected function consumeFlash(): string
+    {
+        $msg = $_SESSION['_flash'] ?? '';
+        unset($_SESSION['_flash']);
+        return is_string($msg) ? $msg : '';
+    }
+
+    protected function consumeFlashPlain(): string
+    {
+        $msg = $_SESSION['_flash_plain'] ?? '';
+        unset($_SESSION['_flash_plain']);
+        return is_string($msg) ? $msg : '';
+    }
+
+    /**
+     * Redireciona após POST para evitar reenvio da ação no reload (PRG).
+     */
+    protected function finishPostRedirect(string $page, string $hash = '', array $params = [], string $mensagem = ''): void
+    {
+        if (!$this->isPost()) {
+            return;
+        }
+        if ($mensagem !== '') {
+            $this->flash($mensagem);
+        }
+        $this->redirect($page, $params, $hash !== '' ? $hash : null);
     }
 
     protected function redirectBack(string $fallback = 'login'): void

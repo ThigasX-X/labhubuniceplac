@@ -29,10 +29,28 @@ class ChamadoSuporte
         )->fetchAll();
     }
 
+    public function listarPorProfessor(int $idProfessor): array
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT * FROM chamados_suporte WHERE id_professor = ? ORDER BY data_hora DESC"
+        );
+        $stmt->execute([$idProfessor]);
+        return $stmt->fetchAll();
+    }
+
     public function countPendentes(): int
     {
         return (int) $this->pdo->query(
             "SELECT COUNT(*) FROM chamados_suporte WHERE status='pendente'"
         )->fetchColumn();
+    }
+
+    public function countPendentesProfessor(int $idProfessor): int
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT COUNT(*) FROM chamados_suporte WHERE id_professor = ? AND status='pendente'"
+        );
+        $stmt->execute([$idProfessor]);
+        return (int) $stmt->fetchColumn();
     }
 }

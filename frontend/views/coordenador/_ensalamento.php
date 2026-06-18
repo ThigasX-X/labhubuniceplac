@@ -1,51 +1,21 @@
 <div class="card shadow-sm border-0 mb-4" style="border-top:4px solid #f59e0b;">
     <div class="card-header bg-white py-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center">
-        <h5 class="mb-3 mb-md-0 fw-bold d-flex align-items-center text-dark">
-            <i class="bi bi-door-open text-warning me-3 fs-4"></i> Ensalamento
-        </h5>
-        <button class="btn btn-primary rounded-pill fw-semibold px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalEnsalamento">
+        <div>
+            <h5 class="mb-1 fw-bold d-flex align-items-center text-dark">
+                <i class="bi bi-geo-alt-fill text-warning me-3 fs-4"></i> Mapa Central de Ensalamento
+            </h5>
+            <p class="text-muted small mb-0">Professor · Matéria · Turma · Bloco · Andar · Sala</p>
+        </div>
+        <button class="btn btn-primary rounded-pill fw-semibold px-4 shadow-sm mt-3 mt-md-0" data-bs-toggle="modal" data-bs-target="#modalEnsalamento">
             <i class="bi bi-plus-lg me-2"></i>Novo Ensalamento
         </button>
     </div>
-    <div class="card-body p-0">
-        <div class="table-responsive" style="max-height:600px;overflow-y:auto;">
-            <table class="table table-striped table-hover align-middle mb-0">
-                <thead class="table-light sticky-top">
-                    <tr>
-                        <th class="ps-4 py-3">Curso</th>
-                        <th>Turno</th>
-                        <th>Bloco</th>
-                        <th>Professor</th>
-                        <th>Disciplina</th>
-                        <th class="pe-4 text-center">Ação</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($listaEnsalamentos as $e): ?>
-                    <tr>
-                        <td class="ps-4 fw-semibold"><?= htmlspecialchars($e['curso'] ?? '-') ?></td>
-                        <td><span class="badge bg-light text-dark border"><?= htmlspecialchars($e['turno'] ?? '-') ?></span></td>
-                        <td><?= htmlspecialchars($e['bloco'] ?? '-') ?></td>
-                        <td><?= htmlspecialchars($e['professor'] ?? '-') ?></td>
-                        <td class="text-muted"><?= htmlspecialchars($e['disciplina'] ?? '-') ?></td>
-                        <td class="pe-4 text-center">
-                            <form method="POST" action="/index.php?page=coordenador" class="d-inline"
-                                  onsubmit="return confirm('Remover este ensalamento?')">
-                                <input type="hidden" name="excluir_ensalamento" value="1">
-                                <input type="hidden" name="id_ensalamento" value="<?= $e['id'] ?>">
-                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                    <?php if (empty($listaEnsalamentos)): ?>
-                        <tr><td colspan="6" class="text-center py-5 text-muted">Nenhum ensalamento cadastrado.</td></tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
+    <div class="card-body">
+        <?php
+        $mostrarOrigem = true;
+        $mostrarAcoes  = true;
+        include VIEWS_PATH . '/shared/_mapa_ensalamento.php';
+        ?>
     </div>
 </div>
 
@@ -70,7 +40,7 @@
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold small">Disciplina</label>
+                        <label class="form-label fw-semibold small">Disciplina (Matéria)</label>
                         <select name="id_disciplina" class="form-select rounded-3" required>
                             <option value="">Selecione...</option>
                             <?php foreach ($disciplinas as $d): ?>
@@ -88,15 +58,24 @@
                         </select>
                     </div>
                     <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Turma (Semestre)</label>
+                        <select name="id_semestre" class="form-select rounded-3" required>
+                            <option value="">Selecione...</option>
+                            <?php foreach ($semestres as $s): ?>
+                                <option value="<?= $s['id'] ?>"><?= htmlspecialchars($s['nome']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
                         <label class="form-label fw-semibold small">Turno</label>
                         <select name="turno" class="form-select rounded-3" required>
                             <option value="">Selecione...</option>
                             <option>Matutino</option><option>Vespertino</option><option>Noturno</option>
                         </select>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label fw-semibold small">Categoria</label>
-                        <input type="text" name="categoria" class="form-control rounded-3" placeholder="Opcional">
+                    <div class="col-md-12">
+                        <label class="form-label fw-semibold small">Categoria (opcional)</label>
+                        <input type="text" name="categoria" class="form-control rounded-3" placeholder="Ex: Presencial, EAD híbrido">
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-semibold small">Bloco</label>
@@ -128,13 +107,11 @@
                     const bloco = document.querySelector('#modalEnsalamento .ensal-bloco');
                     const andar = document.querySelector('#modalEnsalamento .ensal-andar');
                     const sala  = document.querySelector('#modalEnsalamento .ensal-sala');
-
                     const fill = (sel, items, placeholder) => {
                         sel.innerHTML = `<option value="">${placeholder}</option>` +
                             items.map(i => `<option value="${i.id}">${i.nome}</option>`).join('');
                         sel.disabled = items.length === 0;
                     };
-
                     bloco.addEventListener('change', async () => {
                         fill(andar, [], 'Carregando...');
                         fill(sala,  [], 'Selecione um andar');
@@ -142,7 +119,6 @@
                         const r = await fetch('/index.php?page=api/andares&id_bloco=' + bloco.value);
                         fill(andar, await r.json(), 'Selecione...');
                     });
-
                     andar.addEventListener('change', async () => {
                         fill(sala, [], 'Carregando...');
                         if (!andar.value) return fill(sala, [], 'Selecione um andar');

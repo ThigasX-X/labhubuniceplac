@@ -24,6 +24,12 @@ cacert.pem
 # Logs
 *.log
 
+# Docker (marcador de init local do banco)
+.docker-db-init
+.dockerignore
+docker-compose.yml
+Dockerfile
+
 # Arquivos de sistema operacional
 .DS_Store
 Thumbs.db
