@@ -9,17 +9,21 @@ const LabHubPanel = {
 
 const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('form').forEach(f => {
-        if ((f.method || '').toLowerCase() === 'post' && !f.querySelector('input[name="_csrf"]')) {
-            const i = document.createElement('input');
-            i.type = 'hidden';
-            i.name = '_csrf';
-            i.value = CSRF_TOKEN;
-            f.appendChild(i);
-        }
-    });
-});
+// Injeta o token CSRF em qualquer form POST no momento do submit. Usar o evento
+// (em vez de varrer no DOMContentLoaded) garante que formulários inseridos
+// dinamicamente — ex.: o "Resolver Chamado" trazido pelo polling — também recebam o token.
+document.addEventListener('submit', (e) => {
+    const f = e.target;
+    if (f instanceof HTMLFormElement
+        && (f.method || '').toLowerCase() === 'post'
+        && !f.querySelector('input[name="_csrf"]')) {
+        const i = document.createElement('input');
+        i.type = 'hidden';
+        i.name = '_csrf';
+        i.value = CSRF_TOKEN;
+        f.appendChild(i);
+    }
+}, true);
 
 function autoOcultarMensagens() {
     document.querySelectorAll('.alert-autohide').forEach(el => {
