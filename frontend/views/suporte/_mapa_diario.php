@@ -79,7 +79,8 @@ function renderizarCardSuporte($l, $chavesEmUso, $borda) {
 <div class="row align-items-end mb-4 g-3">
     <div class="col-md-6"><h4 class="fw-bold text-uniceplac mb-1">Mapa de Ocupação</h4><p class="text-muted small mb-0">Grade do dia: <?= date('d/m/Y', strtotime($dataFiltro)) ?></p></div>
     <div class="col-md-6 text-md-end">
-        <form action="/index.php?page=suporte" method="GET" class="d-inline-block shadow-sm" style="border-radius:20px;overflow:hidden;">
+        <form action="/index.php" method="GET" class="d-inline-block shadow-sm" style="border-radius:20px;overflow:hidden;">
+            <input type="hidden" name="page" value="suporte">
             <div class="input-group input-group-sm"><span class="input-group-text bg-white border-end-0 text-muted">Data</span><input type="date" class="form-control border-start-0" name="data_busca" value="<?= htmlspecialchars($dataFiltro) ?>" onchange="this.form.submit()"></div>
         </form>
     </div>
